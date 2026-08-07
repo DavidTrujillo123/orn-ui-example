@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "test-orm-ui",
-    "slug": "test-orm-ui",
+    "name": "ORM UI Example",
+    "slug": "orm-ui-example",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "testormui",
+    "scheme": "ormuiexample",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
