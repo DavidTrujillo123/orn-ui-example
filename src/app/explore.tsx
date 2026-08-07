@@ -1,180 +1,207 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
+import { Card } from 'orn-ui/card';
+import { Badge } from 'orn-ui/badge';
+import { Button } from 'orn-ui/button';
+import { Spinner } from 'orn-ui/spinner';
+import { Image } from 'orn-ui/image';
+import { EmptyState } from 'orn-ui/empty-state';
+import { BottomSheet } from 'orn-ui/bottom-sheet';
+import { AvatarHeader } from 'orn-ui/avatar-header';
+import { useToast } from 'orn-ui/use-toast';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+import { ApiCategoryRepository } from '@/infrastructure/repositories/ApiCategoryRepository';
+import { CategoryUseCases } from '@/domain/usecases/categories/CategoryUseCases';
+import { Category } from '@/domain/entities/Category';
+import { Product } from '@/domain/entities/Product';
+import { useCart } from '@/presentation/state/CartContext';
+
+const categoryUseCases = new CategoryUseCases(new ApiCategoryRepository());
+
+export default function ExploreScreen() {
+  const insets = useSafeAreaInsets();
+  const { addToCart } = useCart();
+  const toast = useToast();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
+  
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryUseCases.getCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      toast.show({
+        title: 'Error de Categorías',
+        message: 'No se pudieron obtener las categorías de Platzi API.',
+        variant: 'error',
+      });
+    } finally {
+      setLoadingCategories(false);
+      setRefreshing(false);
+    }
   };
-  const theme = useTheme();
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleCategoryPress = async (cat: Category) => {
+    setSelectedCategory(cat);
+    setLoadingProducts(true);
+    try {
+      const prods = await categoryUseCases.getCategoryProducts(cat.id);
+      setCategoryProducts(prods);
+    } catch (err) {
+      console.error('Error fetching category products:', err);
+      toast.show({
+        title: 'Error de carga',
+        message: `Fallo al obtener productos de ${cat.name}.`,
+        variant: 'error',
+      });
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  if (loadingCategories) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
+        <Spinner size="large" variant="dots" />
+        <View style={{ height: 16 }} />
+        <Body>Cargando Categorías...</Body>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+        paddingTop: insets.top + 16,
+        paddingHorizontal: 16,
+      }}
+    >
+      <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 }}>
+        Explora Categorías
+      </Title>
+      <Caption color="#64748B" style={{ marginBottom: 16 }}>
+        Selecciona una categoría para filtrar sus productos
+      </Caption>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+      <FlatList
+        key="categories-grid-2"
+        data={categories}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 16 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchCategories} />}
+        renderItem={({ item }) => (
+          <Card
+            style={{
+              flex: 1,
+              padding: 16,
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <Image
+              source={{ uri: item.image }}
+              width={100}
+              height={100}
+              radius={16}
+              resizeMode="cover"
+            />
+            <Title align="center" numberOfLines={1} style={{ fontSize: 16, fontWeight: '700' }}>
+              {item.name}
+            </Title>
+            <Button
+              title="Ver Productos"
+              variant="outline"
+              size="sm"
+              onPress={() => handleCategoryPress(item)}
+            />
+          </Card>
+        )}
+      />
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+      {/* BottomSheet for Selected Category Products */}
+      {selectedCategory && (
+        <BottomSheet
+          visible={!!selectedCategory}
+          onClose={() => setSelectedCategory(null)}
+        >
+          <View style={{ maxHeight: 500, paddingBottom: 20 }}>
+            <AvatarHeader
+              iconName="info"
+              title={selectedCategory.name}
+              subtitle={`ID: #${selectedCategory.id} — Catálogo Platzi`}
+            />
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
+            {loadingProducts ? (
+              <View style={{ padding: 30, alignItems: 'center' }}>
+                <Spinner size="large" variant="ring" />
+                <Body style={{ marginTop: 12 }}>Buscando productos de {selectedCategory.name}...</Body>
+              </View>
+            ) : categoryProducts.length === 0 ? (
+              <EmptyState
+                title="Sin productos"
+                description={`No hay productos disponibles en ${selectedCategory.name}.`}
               />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+            ) : (
+              <FlatList
+                key="category-products-list-1"
+                data={categoryProducts}
+                keyExtractor={(item) => item.id.toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12 }}
+                renderItem={({ item }) => (
+                  <Card style={{ padding: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                    <Image
+                      source={{ uri: item.images[0] }}
+                      width={60}
+                      height={60}
+                      radius={10}
+                    />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Subtitle numberOfLines={1} style={{ fontSize: 15, fontWeight: '700' }}>
+                        {item.title}
+                      </Subtitle>
+                      <Title color="#2563EB" style={{ fontSize: 15, fontWeight: 'bold' }}>
+                        ${item.price}
+                      </Title>
+                    </View>
+                    <Button
+                      title="+ Carrito"
+                      variant="primary"
+                      size="sm"
+                      onPress={() => {
+                        addToCart(item);
+                        toast.show({
+                          title: '¡Producto añadido!',
+                          message: `${item.title} fue agregado al carrito.`,
+                          variant: 'success',
+                        });
+                      }}
+                    />
+                  </Card>
+                )}
+              />
+            )}
+          </View>
+        </BottomSheet>
+      )}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
-});
