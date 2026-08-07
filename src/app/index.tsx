@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
@@ -15,6 +15,7 @@ import { Modal } from 'orn-ui/modal';
 import { BottomSheet } from 'orn-ui/bottom-sheet';
 import { EmptyState } from 'orn-ui/empty-state';
 import { AvatarHeader } from 'orn-ui/avatar-header';
+import { Fab } from 'orn-ui/fab';
 import { useToast } from 'orn-ui/use-toast';
 import { useAlert } from 'orn-ui/use-alert';
 
@@ -47,13 +48,18 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Create Product Modal State
+  // Create Product Form State & Inline Validation
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newCatId, setNewCatId] = useState('1');
   const [creating, setCreating] = useState(false);
+
+  // Field Errors
+  const [titleError, setTitleError] = useState('');
+  const [priceError, setPriceError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
 
   const loadInitialData = async () => {
     try {
@@ -67,8 +73,8 @@ export default function HomeScreen() {
     } catch (err) {
       console.error('Error loading products/categories:', err);
       toast.show({
-        title: 'Error de carga',
-        message: 'No se pudieron cargar los datos de Platzi API.',
+        title: 'Error de conexión',
+        message: 'No se pudieron cargar los productos.',
         variant: 'error',
       });
     } finally {
@@ -104,33 +110,60 @@ export default function HomeScreen() {
     setFilteredProducts(result);
   };
 
+  const resetFormState = () => {
+    setNewTitle('');
+    setNewPrice('');
+    setNewDescription('');
+    setNewCatId('1');
+    setTitleError('');
+    setPriceError('');
+    setDescriptionError('');
+  };
+
   const handleCreateProduct = async () => {
-    if (!newTitle || !newPrice || !newDescription) {
-      toast.show({
-        title: 'Campos requeridos',
-        message: 'Ingresa título, precio y descripción.',
-        variant: 'warning',
-      });
-      return;
+    let hasError = false;
+
+    if (!newTitle.trim()) {
+      setTitleError('El nombre del producto es obligatorio.');
+      hasError = true;
+    } else {
+      setTitleError('');
     }
+
+    if (!newPrice.trim() || isNaN(parseFloat(newPrice)) || parseFloat(newPrice) <= 0) {
+      setPriceError('Ingresa un precio válido mayor a 0.');
+      hasError = true;
+    } else {
+      setPriceError('');
+    }
+
+    if (!newDescription.trim()) {
+      setDescriptionError('La descripción es obligatoria.');
+      hasError = true;
+    } else {
+      setDescriptionError('');
+    }
+
+    if (hasError) return;
+
     setCreating(true);
     try {
       const created = await productUseCases.createProduct({
-        title: newTitle,
-        price: parseFloat(newPrice) || 10,
-        description: newDescription,
+        title: newTitle.trim(),
+        price: parseFloat(newPrice),
+        description: newDescription.trim(),
         categoryId: parseInt(newCatId, 10) || 1,
         images: ['https://i.imgur.com/QkIa5tT.jpeg'],
       });
+
       setProducts((prev) => [created, ...prev]);
       setFilteredProducts((prev) => [created, ...prev]);
       setIsCreateModalOpen(false);
-      setNewTitle('');
-      setNewPrice('');
-      setNewDescription('');
+      resetFormState();
+
       toast.show({
-        title: '¡Producto Creado!',
-        message: `${created.title} ha sido registrado en Platzi API.`,
+        title: '¡Producto Publicado!',
+        message: `${created.title} ha sido agregado al catálogo.`,
         variant: 'success',
       });
     } catch (err: any) {
@@ -147,7 +180,7 @@ export default function HomeScreen() {
   const handleDeleteProduct = async (id: number) => {
     const isOk = await confirm({
       title: 'Eliminar producto',
-      message: '¿Estás seguro de eliminar este producto de la API?',
+      message: '¿Estás seguro de eliminar este producto del catálogo?',
       confirmText: 'Eliminar',
       cancelText: 'Cancelar',
       destructive: true,
@@ -162,7 +195,7 @@ export default function HomeScreen() {
       setSelectedProduct(null);
       toast.show({
         title: 'Producto eliminado',
-        message: 'El producto fue removido exitosamente.',
+        message: 'El producto fue removido correctamente.',
         variant: 'info',
       });
     } catch (err: any) {
@@ -179,7 +212,7 @@ export default function HomeScreen() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
         <Spinner size="large" variant="ring" />
         <View style={{ height: 16 }} />
-        <Body>Cargando Platzi Store Clean Arch...</Body>
+        <Body>Cargando tienda...</Body>
       </View>
     );
   }
@@ -193,11 +226,11 @@ export default function HomeScreen() {
         paddingHorizontal: 16,
       }}
     >
-      {/* Header */}
+      {/* App Top Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <View>
-          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Platzi Clean Store</Title>
-          <Caption color="#64748B">Powered strictly by orn-ui</Caption>
+          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Platzi Store</Title>
+          <Caption color="#64748B">Encuentra los mejores productos</Caption>
         </View>
 
         <Avatar size={44}>
@@ -207,26 +240,19 @@ export default function HomeScreen() {
         </Avatar>
       </View>
 
-      {/* Search Input & Add Product Button */}
-      <View style={{ gap: 12, marginBottom: 16 }}>
+      {/* Search Bar */}
+      <View style={{ marginBottom: 16 }}>
         <Input
-          placeholder="Buscar productos Platzi..."
+          placeholder="Buscar artículos..."
           value={search}
           onChangeText={handleSearch}
           leftIconName="search"
           rightIconName={search ? 'close' : undefined}
           onRightIconPress={() => handleSearch('')}
         />
-
-        <Button
-          title="+ Crear Nuevo Producto"
-          variant="secondary"
-          size="sm"
-          onPress={() => setIsCreateModalOpen(true)}
-        />
       </View>
 
-      {/* Categories Horizontal Filter Badges */}
+      {/* Category Pills Filter */}
       <View style={{ marginBottom: 16 }}>
         <FlatList
           horizontal
@@ -237,30 +263,35 @@ export default function HomeScreen() {
           renderItem={({ item }) => {
             const isSelected = selectedCategoryId === item.id;
             return (
-              <Badge
-                label={item.name}
-                variant={isSelected ? 'info' : 'neutral'}
-                backgroundColor={isSelected ? '#2563EB' : undefined}
-                textColor={isSelected ? '#FFFFFF' : undefined}
-                style={{ paddingHorizontal: 14, paddingVertical: 8 }}
-              />
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => handleCategorySelect(item.id)}
+              >
+                <Badge
+                  label={item.name}
+                  variant={isSelected ? 'info' : 'neutral'}
+                  backgroundColor={isSelected ? '#2563EB' : undefined}
+                  textColor={isSelected ? '#FFFFFF' : undefined}
+                  style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+                />
+              </TouchableOpacity>
             );
           }}
         />
       </View>
 
-      {/* Product List */}
+      {/* Product Grid */}
       {filteredProducts.length === 0 ? (
         <EmptyState
           title="Sin resultados"
-          description="No se encontraron productos para los filtros seleccionados."
+          description="No encontramos productos coincidentes con tu búsqueda o categoría seleccionada."
         />
       ) : (
         <FlatList
           data={filteredProducts}
           keyExtractor={(item) => item.id.toString()}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 16 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 80, gap: 16 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadInitialData} />}
           renderItem={({ item }) => (
             <Card style={{ padding: 14, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
@@ -273,7 +304,7 @@ export default function HomeScreen() {
               />
 
               <View style={{ flex: 1, gap: 4 }}>
-                <Badge label={item.category?.name || 'Item'} variant="neutral" />
+                <Badge label={item.category?.name || 'Producto'} variant="neutral" />
                 <Subtitle numberOfLines={1} style={{ fontSize: 16, fontWeight: '700' }}>
                   {item.title}
                 </Subtitle>
@@ -284,7 +315,7 @@ export default function HomeScreen() {
 
               <View style={{ gap: 6 }}>
                 <Button
-                  title="Ver"
+                  title="Detalles"
                   variant="outline"
                   size="sm"
                   onPress={() => setSelectedProduct(item)}
@@ -296,8 +327,8 @@ export default function HomeScreen() {
                   onPress={() => {
                     addToCart(item);
                     toast.show({
-                      title: 'Añadido al Carrito',
-                      message: `${item.title} fue agregado.`,
+                      title: 'Agregado al Carrito',
+                      message: `${item.title} fue añadido.`,
                       variant: 'success',
                     });
                   }}
@@ -308,7 +339,20 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* BottomSheet Product Detail View */}
+      {/* Floating Action Button (FAB) for Creating Products */}
+      <Fab
+        iconName="plus"
+        size={56}
+        bottom={insets.bottom + 20}
+        right={20}
+        accessibilityLabel="Publicar Nuevo Producto"
+        onPress={() => {
+          resetFormState();
+          setIsCreateModalOpen(true);
+        }}
+      />
+
+      {/* Product Detail BottomSheet */}
       {selectedProduct && (
         <BottomSheet
           visible={!!selectedProduct}
@@ -318,7 +362,7 @@ export default function HomeScreen() {
             <AvatarHeader
               iconName="info"
               title={selectedProduct.title}
-              subtitle={`$${selectedProduct.price} — Categoría: ${selectedProduct.category?.name || 'General'}`}
+              subtitle={`$${selectedProduct.price} — ${selectedProduct.category?.name || 'General'}`}
             />
 
             <Image
@@ -331,9 +375,9 @@ export default function HomeScreen() {
             <Body style={{ lineHeight: 22, color: '#475569' }}>{selectedProduct.description}</Body>
 
             <Card style={{ backgroundColor: '#F1F5F9', padding: 12, gap: 8 }}>
-              <KeyValueRow label="ID de Producto" value={`#${selectedProduct.id}`} />
-              <KeyValueRow label="Categoría" value={selectedProduct.category?.name || 'N/A'} />
-              <KeyValueRow label="Garantía Platzi" value="100% Verificado" />
+              <KeyValueRow label="Código de Producto" value={`#${selectedProduct.id}`} />
+              <KeyValueRow label="Categoría" value={selectedProduct.category?.name || 'General'} />
+              <KeyValueRow label="Garantía de Devolución" value="30 días gratis" />
             </Card>
 
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
@@ -345,7 +389,7 @@ export default function HomeScreen() {
                   addToCart(selectedProduct);
                   setSelectedProduct(null);
                   toast.show({
-                    title: '¡Añadido!',
+                    title: '¡Agregado!',
                     message: `${selectedProduct.title} guardado en el carrito.`,
                     variant: 'success',
                   });
@@ -364,29 +408,44 @@ export default function HomeScreen() {
       {/* Overlay Modal Create Product */}
       <Modal
         variant="overlay"
-        title="Crear Producto (Platzi API)"
+        title="Publicar Nuevo Producto"
         visible={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
       >
         <View style={{ gap: 12 }}>
           <Input
-            label="Título"
-            placeholder="Ej. T-Shirt Premium"
+            label="Nombre del Producto"
+            required
+            placeholder="Ej. Tenis Deportivos"
             value={newTitle}
-            onChangeText={setNewTitle}
+            error={titleError}
+            onChangeText={(val) => {
+              setNewTitle(val);
+              if (val.trim()) setTitleError('');
+            }}
           />
           <Input
-            label="Precio ($)"
-            placeholder="Ej. 29.99"
+            label="Precio ($ USD)"
+            required
+            placeholder="Ej. 49.99"
             keyboardType="numeric"
             value={newPrice}
-            onChangeText={setNewPrice}
+            error={priceError}
+            onChangeText={(val) => {
+              setNewPrice(val);
+              if (val.trim()) setPriceError('');
+            }}
           />
           <Input
             label="Descripción"
-            placeholder="Descripción detallada..."
+            required
+            placeholder="Describe las características principales..."
             value={newDescription}
-            onChangeText={setNewDescription}
+            error={descriptionError}
+            onChangeText={(val) => {
+              setNewDescription(val);
+              if (val.trim()) setDescriptionError('');
+            }}
           />
           <Input
             label="ID de Categoría"
@@ -404,7 +463,7 @@ export default function HomeScreen() {
               onPress={() => setIsCreateModalOpen(false)}
             />
             <Button
-              title={creating ? 'Guardando...' : 'Crear'}
+              title={creating ? 'Guardando...' : 'Publicar'}
               variant="primary"
               style={{ flex: 1 }}
               disabled={creating}

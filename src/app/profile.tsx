@@ -54,13 +54,13 @@ export default function ProfileScreen() {
     if (success) {
       toast.show({
         title: '¡Bienvenido!',
-        message: 'Sesión autenticada en Platzi API.',
+        message: 'Has iniciado sesión correctamente.',
         variant: 'success',
       });
     } else {
       toast.show({
         title: 'Error de Autenticación',
-        message: 'Verifica tus credenciales.',
+        message: 'Verifica tus credenciales de acceso.',
         variant: 'error',
       });
     }
@@ -115,29 +115,34 @@ export default function ProfileScreen() {
       }}
     >
       <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>
-        Mi Cuenta Platzi
+        Mi Cuenta
       </Title>
 
       {user ? (
         // Authenticated Profile Dashboard
         <View style={{ gap: 16 }}>
           {/* Main User Card Header */}
-          <Card style={{ padding: 20, gap: 12, backgroundColor: '#FFFFFF' }}>
+          <Card style={{ padding: 20, gap: 12, backgroundColor: '#FFFFFF', alignItems: 'center' }}>
             <AvatarHeader
               initials={user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
               title={user.name}
               subtitle={user.email}
             />
 
-            <View style={{ alignItems: 'center' }}>
-              <Badge label={user.role ? user.role.toUpperCase() : 'CUSTOMER'} variant="info" />
-            </View>
+            <Badge
+              label={user.role === 'admin' ? 'ADMINISTRADOR' : 'CLIENTE VIP'}
+              variant={user.role === 'admin' ? 'error' : 'info'}
+            />
           </Card>
 
-          {/* Quick Navigation Option Cards */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          {/* Horizontal Scrollable Navigation Option Cards */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 10, paddingVertical: 4 }}
+          >
             <OptionCard
-              label="Info"
+              label="Perfil"
               iconName="info"
               isSelected={activeTab === 'info'}
               onPress={() => setActiveTab('info')}
@@ -160,30 +165,30 @@ export default function ProfileScreen() {
               isSelected={activeTab === 'support'}
               onPress={() => setActiveTab('support')}
             />
-          </View>
+          </ScrollView>
 
           {/* Tab 1: Account Info */}
           {activeTab === 'info' && (
             <Card style={{ padding: 16, gap: 14, backgroundColor: '#FFFFFF' }}>
               <Title style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
-                Información de la Cuenta (`InfoRow`):
+                Información de la Cuenta:
               </Title>
               <InfoRow
                 icon="info"
-                label="ID de Usuario Platzi"
+                label="ID de Usuario"
                 value={`#${user.id}`}
                 placeholder="N/A"
               />
               <InfoRow
                 icon="check"
-                label="Rol de Permisos"
-                value={user.role || 'Customer'}
-                placeholder="Customer"
+                label="Nivel de Cuenta"
+                value={user.role === 'admin' ? 'Administrador del Sistema' : 'Cliente Registrado'}
+                placeholder="Cliente"
               />
               <InfoRow
                 icon="warning"
-                label="Estado de Token JWT"
-                value={token ? 'Bearer Token Activo' : 'Sin Token'}
+                label="Sesión Segura"
+                value={token ? 'Sesión Verificada (Bearer Token)' : 'Inactiva'}
                 placeholder="Inactivo"
               />
 
@@ -203,7 +208,7 @@ export default function ProfileScreen() {
             <View style={{ gap: 14 }}>
               <Card style={{ padding: 16, gap: 12, backgroundColor: '#FFFFFF' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Title style={{ fontSize: 16, fontWeight: '700' }}>Tarjetas Vinculadas</Title>
+                  <Title style={{ fontSize: 16, fontWeight: '700' }}>Tarjetas Guardadas</Title>
                   <Button
                     title="+ Agregar"
                     variant="outline"
@@ -261,7 +266,7 @@ export default function ProfileScreen() {
           {activeTab === 'settings' && (
             <Card style={{ padding: 16, gap: 14, backgroundColor: '#FFFFFF' }}>
               <Title style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
-                Seguridad y Notificaciones (`Checkbox`):
+                Seguridad y Notificaciones:
               </Title>
               <Checkbox
                 label="Autenticación de 2 Factores (2FA)"
@@ -269,7 +274,7 @@ export default function ProfileScreen() {
                 onValueChange={setEnable2FA}
               />
               <Checkbox
-                label="Notificaciones Push de estado de envíos"
+                label="Notificaciones Push de estado de pedidos"
                 value={pushNotifs}
                 onValueChange={setPushNotifs}
               />
@@ -279,7 +284,7 @@ export default function ProfileScreen() {
                 onValueChange={setLoginAlerts}
               />
               <Checkbox
-                label="Recibir ofertas y promociones exclusivas Platzi"
+                label="Recibir ofertas y promociones por correo"
                 value={promoEmails}
                 onValueChange={setPromoEmails}
               />
@@ -291,12 +296,12 @@ export default function ProfileScreen() {
             <Card style={{ padding: 16, gap: 14, backgroundColor: '#FFFFFF' }}>
               <AvatarHeader
                 iconName="question"
-                title="Soporte Platzi VIP"
-                subtitle="Atención personalizada las 24 horas del día"
+                title="Centro de Ayuda & Soporte"
+                subtitle="Atención especializada las 24 horas del día"
               />
 
               <Body style={{ lineHeight: 20, color: '#475569', textAlign: 'center' }}>
-                ¿Tienes alguna consulta con tu pedido o pago? Nuestro equipo de soporte está disponible.
+                ¿Tienes alguna duda con tu compra o entrega? Nuestro equipo de soporte está disponible en todo momento.
               </Body>
 
               <Button
@@ -305,7 +310,7 @@ export default function ProfileScreen() {
                 onPress={() => {
                   toast.show({
                     title: 'Conectando Chat',
-                    message: 'Un especialista de Platzi se conectará en un momento.',
+                    message: 'Un especialista te atenderá en unos momentos.',
                     variant: 'info',
                   });
                 }}
@@ -326,11 +331,12 @@ export default function ProfileScreen() {
           <AvatarHeader
             iconName="info"
             title="Iniciar Sesión"
-            subtitle="Platzi Auth API Clean Architecture"
+            subtitle="Accede a tu cuenta personal"
           />
 
           <Input
             label="Correo Electrónico"
+            required
             placeholder="john@mail.com"
             value={email}
             onChangeText={setEmail}
@@ -340,6 +346,7 @@ export default function ProfileScreen() {
 
           <Input
             label="Contraseña"
+            required
             placeholder="changeme"
             isPassword
             value={password}
@@ -361,7 +368,7 @@ export default function ProfileScreen() {
 
           <Card style={{ backgroundColor: '#F1F5F9', padding: 12, gap: 4 }}>
             <Caption color="#475569" style={{ fontWeight: 'bold' }}>
-              Credenciales Demo Platzi API:
+              Credenciales de Acceso Demo:
             </Caption>
             <Caption color="#64748B">Email: john@mail.com</Caption>
             <Caption color="#64748B">Password: changeme</Caption>
@@ -372,13 +379,14 @@ export default function ProfileScreen() {
       {/* Add Card Overlay Modal */}
       <Modal
         variant="overlay"
-        title="Agregar Nueva Tarjeta"
+        title="Vincular Nueva Tarjeta"
         visible={isAddCardOpen}
         onClose={() => setIsAddCardOpen(false)}
       >
         <View style={{ gap: 12 }}>
           <Input
             label="Número de Tarjeta"
+            required
             placeholder="4532 •••• •••• 9999"
             keyboardType="numeric"
             value={newCardNumber}
@@ -386,12 +394,14 @@ export default function ProfileScreen() {
           />
           <Input
             label="Nombre del Titular"
+            required
             placeholder="DAVID ALEXANDER"
             value={newCardHolder}
             onChangeText={setNewCardHolder}
           />
           <Input
             label="Vencimiento (MM/AA)"
+            required
             placeholder="12/28"
             value={newCardExpiry}
             onChangeText={setNewCardExpiry}

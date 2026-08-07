@@ -97,7 +97,7 @@ export default function CartScreen() {
   ];
 
   const cardTypeOptions = [
-    { label: 'Visa Debit/Credit', value: 'visa' },
+    { label: 'Visa Debito/Credito', value: 'visa' },
     { label: 'Mastercard World', value: 'mastercard' },
     { label: 'American Express', value: 'amex' },
   ];
@@ -136,17 +136,17 @@ export default function CartScreen() {
 
     await alert({
       title: '¡Orden Procesada con Éxito!',
-      message: `Tu pago de $${totalAmount.toFixed(2)} mediante Tarjeta Simulada (${cardType.toUpperCase()}) fue aceptado por Platzi API.\n\nCódigo de Rastreo: #${newCode}`,
+      message: `Tu pago de $${totalAmount.toFixed(2)} mediante Tarjeta (${cardType.toUpperCase()}) fue aceptado.\n\nCódigo de Rastreo: #${newCode}`,
       type: 'info',
-      confirmText: 'Ver Tracking en Vivo',
+      confirmText: 'Rastrear Pedido',
     });
 
     clearCart();
     // Open Live Tracking Modal
     setIsTrackingModalOpen(true);
     toast.show({
-      title: '¡Compra Exitosa!',
-      message: `Rastrea tu pedido con el código #${newCode}.`,
+      title: '¡Compra Confirmada!',
+      message: `Rastrea tu envío con la guía #${newCode}.`,
       variant: 'success',
     });
   };
@@ -157,20 +157,20 @@ export default function CartScreen() {
       setTrackingStep(nextStep);
       const stepNames = ['Pago Confirmado', 'Empacando en Almacén', 'En Ruta de Entrega', '¡Entregado!'];
       toast.show({
-        title: 'Estado de Envío Actualizado',
+        title: 'Estado del Envío Actualizado',
         message: `Nuevo Estado: ${stepNames[nextStep]}`,
         variant: 'info',
       });
     } else {
       toast.show({
         title: 'Pedido Entregado',
-        message: 'El pedido ya fue entregado con éxito.',
+        message: 'El pedido fue recibido con éxito.',
         variant: 'success',
       });
     }
   };
 
-  // Steps definition for orn-ui Wizard
+  // Steps definition for Checkout Wizard
   const checkoutSteps: WizardStep[] = [
     // Step 1: Shipping Address & Country Select
     {
@@ -181,8 +181,8 @@ export default function CartScreen() {
         <View style={{ gap: 14, paddingVertical: 8 }}>
           <AvatarHeader
             iconName="info"
-            title="Paso 1: Dirección de Envío"
-            subtitle="Ingresa la ubicación donde recibirás tu paquete"
+            title="Dirección de Envío"
+            subtitle="Ingresa la ubicación para recibir tu compra"
           />
           <Input
             label="Dirección de Entrega *"
@@ -205,23 +205,23 @@ export default function CartScreen() {
         </View>
       ),
     },
-    // Step 2: Payment Method & Interactive Simulated Credit Card
+    // Step 2: Payment Method & Interactive Card
     {
       label: 'Tarjeta & Pago',
-      description: 'Simulador de Tarjeta',
+      description: 'Método de Pago',
       canGoNext: paymentMethod !== 'card' || cardNumber.trim().length >= 12,
       content: (
         <View style={{ gap: 16, paddingVertical: 8 }}>
           <AvatarHeader
             iconName="check"
-            title="Paso 2: Simulador de Tarjetas"
-            subtitle="Tarjeta virtual animada en tiempo real (`Card` & `OptionCard`)"
+            title="Selección de Pago"
+            subtitle="Elige tu método de pago preferido"
           />
 
           {/* Payment Method Selector */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <OptionCard
-              label="Tarjeta Visa/MC"
+              label="Tarjeta"
               iconName="check"
               isSelected={paymentMethod === 'card'}
               onPress={() => setPaymentMethod('card')}
@@ -233,7 +233,7 @@ export default function CartScreen() {
               onPress={() => setPaymentMethod('cash')}
             />
             <OptionCard
-              label="Transfer"
+              label="Transferencia"
               iconName="plus"
               isSelected={paymentMethod === 'transfer'}
               onPress={() => setPaymentMethod('transfer')}
@@ -242,7 +242,7 @@ export default function CartScreen() {
 
           {paymentMethod === 'card' ? (
             <View style={{ gap: 14 }}>
-              {/* Live Interactive Simulated Bank Card */}
+              {/* Interactive Bank Card Preview */}
               <Card
                 style={{
                   backgroundColor: '#0F172A',
@@ -255,7 +255,7 @@ export default function CartScreen() {
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Title color="#FFFFFF" style={{ fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>
-                    {presetCards.find((c) => c.id === selectedPresetCardId)?.bank || 'Platzi Virtual Card'}
+                    {presetCards.find((c) => c.id === selectedPresetCardId)?.bank || 'Tarjeta de Crédito'}
                   </Title>
                   <Badge
                     label={cardType.toUpperCase()}
@@ -288,12 +288,12 @@ export default function CartScreen() {
                       TITULAR
                     </Caption>
                     <Title color="#FFFFFF" style={{ fontSize: 13, fontWeight: 'bold' }}>
-                      {cardHolder || 'TITULAR DE LA TARJETA'}
+                      {cardHolder || 'NOMBRE EN TARJETA'}
                     </Title>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Caption color="#94A3B8" style={{ fontSize: 10 }}>
-                      VENCE
+                      VENCIMIENTO
                     </Caption>
                     <Title color="#FFFFFF" style={{ fontSize: 13, fontWeight: 'bold' }}>
                       {cardExpiry || '12/28'}
@@ -302,8 +302,8 @@ export default function CartScreen() {
                 </View>
               </Card>
 
-              {/* Selector de Tarjetas Prediseñadas */}
-              <Subtitle style={{ fontSize: 14, fontWeight: '700' }}>Seleccionar Tarjeta Simulada:</Subtitle>
+              {/* Selector de Tarjetas Guardadas */}
+              <Subtitle style={{ fontSize: 14, fontWeight: '700' }}>Usar Tarjeta Guardada:</Subtitle>
               <View style={{ gap: 8 }}>
                 {presetCards.map((card) => (
                   <OptionCard
@@ -319,13 +319,13 @@ export default function CartScreen() {
               {/* Manual Input Fields */}
               <Card style={{ backgroundColor: '#F8FAFC', padding: 14, gap: 12 }}>
                 <Select
-                  label="Franquicia / Marca"
+                  label="Tipo de Tarjeta"
                   options={cardTypeOptions}
                   selectedValue={cardType}
                   onSelect={setCardType}
                 />
                 <Input
-                  label="Titular de la Tarjeta"
+                  label="Nombre en la Tarjeta"
                   value={cardHolder}
                   onChangeText={setCardHolder}
                 />
@@ -337,7 +337,7 @@ export default function CartScreen() {
                   onChangeText={setCardNumber}
                 />
                 <Input
-                  label="Fecha de Vencimiento"
+                  label="Fecha de Expiración"
                   placeholder="12/28"
                   value={cardExpiry}
                   onChangeText={setCardExpiry}
@@ -354,15 +354,15 @@ export default function CartScreen() {
               <Subtitle style={{ fontWeight: 'bold' }}>Instrucciones de Pago:</Subtitle>
               <Caption color="#475569">
                 {paymentMethod === 'cash'
-                  ? 'Realizarás el pago en efectivo al momento de recibir el paquete en tu puerta.'
-                  : 'Recibirás la CLABE bancaria y referencias tras confirmar la compra.'}
+                  ? 'Realizarás el pago en efectivo al recibir el paquete en tu domicilio.'
+                  : 'Recibirás los datos bancarios y referencia tras confirmar el pedido.'}
               </Caption>
             </Card>
           )}
         </View>
       ),
     },
-    // Step 3: Terms and Conditions & Preferences (`Checkbox`)
+    // Step 3: Terms and Conditions
     {
       label: 'Términos',
       description: 'Condiciones Legales',
@@ -371,14 +371,14 @@ export default function CartScreen() {
         <View style={{ gap: 16, paddingVertical: 8 }}>
           <AvatarHeader
             iconName="warning"
-            title="Paso 3: Términos y Condiciones"
-            subtitle="Acepta las políticas legales para continuar"
+            title="Términos y Condiciones"
+            subtitle="Revisa las políticas antes de confirmar"
           />
 
           <Card style={{ backgroundColor: '#F8FAFC', padding: 14, gap: 10 }}>
-            <Subtitle style={{ fontWeight: 'bold' }}>Políticas de Garantía y Devolución</Subtitle>
+            <Subtitle style={{ fontWeight: 'bold' }}>Garantía de Satisfacción y Devolución</Subtitle>
             <Body style={{ fontSize: 13, color: '#475569', lineHeight: 18 }}>
-              Todos los productos adquiridos en Platzi Store cuentan con 30 días de garantía de satisfacción. Las devoluciones son 100% gratuitas.
+              Todos los productos cuentan con 30 días de garantía. Las devoluciones son sencillas y 100% gratuitas.
             </Body>
           </Card>
 
@@ -391,7 +391,7 @@ export default function CartScreen() {
               onValueChange={setAcceptTerms}
             />
             <Checkbox
-              label="Recibir novedades y cupones de descuento por email"
+              label="Deseo recibir ofertas y promociones exclusivas por email"
               value={marketingEmail}
               onValueChange={setMarketingEmail}
             />
@@ -405,22 +405,22 @@ export default function CartScreen() {
         </View>
       ),
     },
-    // Step 4: Tracking Preview & Final Summary (`Steps` & `KeyValueRow`)
+    // Step 4: Final Summary
     {
       label: 'Confirmación',
-      description: 'Simulación de Envío',
+      description: 'Resumen Final',
       content: (
         <View style={{ gap: 16, paddingVertical: 8 }}>
           <AvatarHeader
             iconName="question"
-            title="Paso 4: Resumen & Rastreo"
-            subtitle="Vista previa del proceso de entrega"
+            title="Resumen del Pedido"
+            subtitle="Línea de tiempo de entrega estimada"
           />
 
-          {/* Timeline Tracking Preview Steps */}
+          {/* Timeline Steps */}
           <Card style={{ padding: 14, backgroundColor: '#F8FAFC' }}>
             <Title style={{ fontSize: 14, fontWeight: '700', marginBottom: 12 }}>
-              Línea de Tiempo del Envió:
+              Etapas del Envío:
             </Title>
             <Steps
               steps={[
@@ -435,11 +435,11 @@ export default function CartScreen() {
 
           <Card style={{ padding: 16, gap: 8, backgroundColor: '#FFFFFF' }}>
             <Subtitle style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
-              Resumen Final del Pedido:
+              Desglose de Compra:
             </Subtitle>
             <KeyValueRow label="Productos Totales" value={`${totalItems} ítems`} />
             <KeyValueRow label="Destino" value={`${address || 'Av. Insurgentes 42'}, ${city || 'CDMX'}`} />
-            <KeyValueRow label="Tarjeta Utilizada" value={cardType.toUpperCase()} />
+            <KeyValueRow label="Método de Pago" value={paymentMethod.toUpperCase()} />
             <KeyValueRow label="Total a Pagar" value={`$${totalAmount.toFixed(2)}`} />
           </Card>
         </View>
@@ -464,7 +464,7 @@ export default function CartScreen() {
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button
-            title="Simular Tracking"
+            title="Rastreo"
             variant="outline"
             size="sm"
             onPress={() => setIsTrackingModalOpen(true)}
@@ -484,7 +484,7 @@ export default function CartScreen() {
       {items.length === 0 ? (
         <EmptyState
           title="Tu carrito está vacío"
-          description="Explora el catálogo de Platzi Store y añade tus productos preferidos."
+          description="Explora el catálogo de productos y añade tus artículos favoritos."
         />
       ) : (
         <View style={{ flex: 1 }}>
@@ -537,11 +537,11 @@ export default function CartScreen() {
           {/* Checkout Summary Footer */}
           <Card style={{ padding: 16, gap: 10, marginBottom: insets.bottom + 16, backgroundColor: '#FFFFFF' }}>
             <KeyValueRow label="Subtotal" value={`$${totalAmount.toFixed(2)}`} />
-            <KeyValueRow label="Envío Platzi Express" value="GRATIS" />
+            <KeyValueRow label="Envío Express" value="GRATIS" />
             <KeyValueRow label="Total a Pagar" value={`$${totalAmount.toFixed(2)}`} />
 
             <Button
-              title={`Iniciar Checkout (Wizard Full Screen)`}
+              title="Proceder al Pago"
               variant="primary"
               style={{ marginTop: 8 }}
               onPress={() => setIsCheckoutModalOpen(true)}
@@ -553,7 +553,7 @@ export default function CartScreen() {
       {/* Full Screen Checkout Wizard Modal */}
       <Modal
         variant="full"
-        title="Checkout Wizard (`orn-ui`)"
+        title="Proceso de Compra"
         visible={isCheckoutModalOpen}
         onClose={() => setIsCheckoutModalOpen(false)}
         scrollable={false}
@@ -568,28 +568,28 @@ export default function CartScreen() {
         />
       </Modal>
 
-      {/* Full Screen Live Tracking Simulator Modal */}
+      {/* Live Tracking Simulator Overlay Modal */}
       <Modal
         variant="overlay"
-        title="Simulador de Tracking en Vivo"
+        title="Rastreo de Envío"
         visible={isTrackingModalOpen}
         onClose={() => setIsTrackingModalOpen(false)}
       >
         <ScrollView contentContainerStyle={{ gap: 16, paddingVertical: 8 }}>
           <AvatarHeader
             iconName="info"
-            title={`Rastreo #${trackingCode}`}
-            subtitle="Simulación de envío en tiempo real (`Steps` & `InfoRow`)"
+            title={`Guía #${trackingCode}`}
+            subtitle="Seguimiento de paquete en tiempo real"
           />
 
           <Card style={{ padding: 16, gap: 14, backgroundColor: '#F8FAFC' }}>
-            <Title style={{ fontSize: 16, fontWeight: '700' }}>Estado del Envío en Vivo:</Title>
+            <Title style={{ fontSize: 16, fontWeight: '700' }}>Progreso de la Entrega:</Title>
             <Steps
               steps={[
                 { label: 'Pago Confirmado', description: 'Verificado' },
-                { label: 'Almacén', description: 'Asignando guía' },
+                { label: 'Almacén', description: 'Empacado' },
                 { label: 'En Ruta', description: 'Repartidor en camino' },
-                { label: 'Entregado', description: 'Destino alcanzado' },
+                { label: 'Entregado', description: 'Entregado en destino' },
               ]}
               current={trackingStep}
             />
@@ -597,30 +597,30 @@ export default function CartScreen() {
 
           <Card style={{ padding: 16, gap: 12 }}>
             <Title style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
-              Información de Rastreo (`InfoRow`):
+              Detalles del Rastreo:
             </Title>
             <InfoRow
               icon="info"
-              label="Código de Guía"
+              label="Número de Guía"
               value={`#${trackingCode}`}
               placeholder="N/A"
             />
             <InfoRow
               icon="check"
-              label="Transportista"
+              label="Empresa de Envío"
               value="Platzi Express Logistics"
               placeholder="Platzi Express"
             />
             <InfoRow
               icon="warning"
-              label="Tiempo Estimado"
+              label="Estimado de Entrega"
               value={trackingStep === 3 ? '¡Entregado!' : 'Llega hoy antes de las 6:00 PM'}
               placeholder="Pendiente"
             />
           </Card>
 
           <Button
-            title={trackingStep < 3 ? "Simular Avance de Envío (Siguiente Etapa)" : "Pedido Completado"}
+            title={trackingStep < 3 ? "Simular Avanzar Envío" : "Pedido Entregado"}
             variant="primary"
             disabled={trackingStep >= 3}
             onPress={handleAdvanceTracking}

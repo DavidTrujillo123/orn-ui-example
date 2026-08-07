@@ -41,8 +41,8 @@ export default function ExploreScreen() {
     } catch (err) {
       console.error('Error fetching categories:', err);
       toast.show({
-        title: 'Error de Categorías',
-        message: 'No se pudieron obtener las categorías de Platzi API.',
+        title: 'Error de conexión',
+        message: 'No se pudieron obtener las categorías.',
         variant: 'error',
       });
     } finally {
@@ -65,7 +65,7 @@ export default function ExploreScreen() {
       console.error('Error fetching category products:', err);
       toast.show({
         title: 'Error de carga',
-        message: `Fallo al obtener productos de ${cat.name}.`,
+        message: `No se pudieron cargar los productos de ${cat.name}.`,
         variant: 'error',
       });
     } finally {
@@ -78,7 +78,7 @@ export default function ExploreScreen() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
         <Spinner size="large" variant="dots" />
         <View style={{ height: 16 }} />
-        <Body>Cargando Categorías...</Body>
+        <Body>Cargando categorías...</Body>
       </View>
     );
   }
@@ -96,7 +96,7 @@ export default function ExploreScreen() {
         Explora Categorías
       </Title>
       <Caption color="#64748B" style={{ marginBottom: 16 }}>
-        Selecciona una categoría para filtrar sus productos
+        Encuentra productos organizados por categoría
       </Caption>
 
       <FlatList
@@ -146,7 +146,7 @@ export default function ExploreScreen() {
             <AvatarHeader
               iconName="info"
               title={selectedCategory.name}
-              subtitle={`ID: #${selectedCategory.id} — Catálogo Platzi`}
+              subtitle="Catálogo de productos disponibles"
             />
 
             {loadingProducts ? (
@@ -157,7 +157,7 @@ export default function ExploreScreen() {
             ) : categoryProducts.length === 0 ? (
               <EmptyState
                 title="Sin productos"
-                description={`No hay productos disponibles en ${selectedCategory.name}.`}
+                description={`No hay productos disponibles en la categoría ${selectedCategory.name}.`}
               />
             ) : (
               <FlatList

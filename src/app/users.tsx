@@ -11,6 +11,7 @@ import { Spinner } from 'orn-ui/spinner';
 import { Avatar } from 'orn-ui/avatar';
 import { Modal } from 'orn-ui/modal';
 import { AvatarHeader } from 'orn-ui/avatar-header';
+import { EmptyState } from 'orn-ui/empty-state';
 import { useToast } from 'orn-ui/use-toast';
 
 import { ApiUserRepository } from '@/infrastructure/repositories/ApiUserRepository';
@@ -24,6 +25,8 @@ export default function UsersScreen() {
   const toast = useToast();
 
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -32,18 +35,19 @@ export default function UsersScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [avatar, setAvatar] = useState('https://api.dicebear.com/7.x/avataaars/svg?seed=NewUser');
+  const [avatar, setAvatar] = useState('');
   const [creating, setCreating] = useState(false);
 
   const fetchUsers = async () => {
     try {
       const data = await userUseCases.getUsers(20);
       setUsers(data);
+      setFilteredUsers(data);
     } catch (err) {
       console.error('Error fetching users:', err);
       toast.show({
-        title: 'Error de Red',
-        message: 'Fallo al obtener la lista de usuarios.',
+        title: 'Error de conexión',
+        message: 'No se pudo obtener la lista de usuarios.',
         variant: 'error',
       });
     } finally {
@@ -55,6 +59,21 @@ export default function UsersScreen() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const handleSearch = (text: string) => {
+    setSearch(text);
+    if (text.trim()) {
+      setFilteredUsers(
+        users.filter(
+          (u) =>
+            u.name.toLowerCase().includes(text.toLowerCase()) ||
+            u.email.toLowerCase().includes(text.toLowerCase())
+        )
+      );
+    } else {
+      setFilteredUsers(users);
+    }
+  };
 
   const handleRegisterUser = async () => {
     if (!name || !email || !password) {
@@ -75,18 +94,20 @@ export default function UsersScreen() {
         role: 'customer',
       });
       setUsers((prev) => [newUser, ...prev]);
+      setFilteredUsers((prev) => [newUser, ...prev]);
       setIsModalOpen(false);
       setName('');
       setEmail('');
       setPassword('');
+      setAvatar('');
       toast.show({
         title: '¡Usuario Registrado!',
-        message: `${newUser.name} se creó exitosamente.`,
+        message: `${newUser.name} se unió a la plataforma.`,
         variant: 'success',
       });
     } catch (err: any) {
       toast.show({
-        title: 'Error al registrar',
+        title: 'Error de registro',
         message: err.message,
         variant: 'error',
       });
@@ -100,7 +121,7 @@ export default function UsersScreen() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
         <Spinner size="large" variant="dots" />
         <View style={{ height: 16 }} />
-        <Body>Cargando Usuarios de Platzi API...</Body>
+        <Body>Cargando comunidad de usuarios...</Body>
       </View>
     );
   }
@@ -116,69 +137,88 @@ export default function UsersScreen() {
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <View>
-          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Usuarios Platzi</Title>
-          <Caption color="#64748B">Gestión de usuarios vía Clean Arch</Caption>
+          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Directorio de Usuarios</Title>
+          <Caption color="#64748B">Comunidad activa en la plataforma</Caption>
         </View>
 
         <Button
-          title="+ Nuevo"
+          title="+ Registrar"
           variant="primary"
           size="sm"
           onPress={() => setIsModalOpen(true)}
         />
       </View>
 
-      <FlatList
-        data={users}
-        keyExtractor={(item) => item.id.toString()}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 14 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchUsers} />}
-        renderItem={({ item }) => (
-          <Card style={{ padding: 14, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-            <Avatar size={48}>
-              <Title color="#2563EB" style={{ fontSize: 18, fontWeight: 'bold' }}>
-                {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
-              </Title>
-            </Avatar>
+      {/* User Search Input */}
+      <View style={{ marginBottom: 16 }}>
+        <Input
+          placeholder="Buscar por nombre o correo..."
+          value={search}
+          onChangeText={handleSearch}
+          leftIconName="search"
+          rightIconName={search ? 'close' : undefined}
+          onRightIconPress={() => handleSearch('')}
+        />
+      </View>
 
-            <View style={{ flex: 1, gap: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Subtitle style={{ fontSize: 16, fontWeight: '700' }}>{item.name}</Subtitle>
-                <Badge
-                  label={item.role || 'customer'}
-                  variant={item.role === 'admin' ? 'error' : 'neutral'}
-                />
+      {filteredUsers.length === 0 ? (
+        <EmptyState
+          title="Sin usuarios"
+          description="No se encontraron usuarios que coincidan con la búsqueda."
+        />
+      ) : (
+        <FlatList
+          data={filteredUsers}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 14 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchUsers} />}
+          renderItem={({ item }) => (
+            <Card style={{ padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+              <Avatar size={52}>
+                <Title color="#2563EB" style={{ fontSize: 20, fontWeight: 'bold' }}>
+                  {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
+                </Title>
+              </Avatar>
+
+              <View style={{ flex: 1, gap: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Subtitle style={{ fontSize: 16, fontWeight: '700' }}>{item.name}</Subtitle>
+                  <Badge
+                    label={item.role === 'admin' ? 'ADMINISTRADOR' : 'CLIENTE'}
+                    variant={item.role === 'admin' ? 'error' : 'info'}
+                  />
+                </View>
+                <Caption color="#64748B">{item.email}</Caption>
+                <Caption color="#94A3B8">Miembro ID #{item.id}</Caption>
               </View>
-              <Caption color="#64748B">{item.email}</Caption>
-              <Caption color="#94A3B8">ID: #{item.id}</Caption>
-            </View>
-          </Card>
-        )}
-      />
+            </Card>
+          )}
+        />
+      )}
 
       {/* Overlay Modal Register User */}
       <Modal
         variant="overlay"
-        title="Registrar Usuario"
+        title="Registrar Nuevo Usuario"
         visible={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
         <View style={{ gap: 12 }}>
           <AvatarHeader
             initials="NU"
-            title="Registrar Usuario"
-            subtitle="Platzi API Clean Architecture"
+            title="Nuevo Miembro"
+            subtitle="Crea una cuenta en la plataforma"
           />
 
           <Input
-            label="Nombre Completo"
+            label="Nombre Completo *"
             placeholder="Ej. Maria Lopez"
             value={name}
             onChangeText={setName}
           />
           <Input
-            label="Email"
+            label="Correo Electrónico *"
             placeholder="ejemplo@mail.com"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -186,14 +226,14 @@ export default function UsersScreen() {
             onChangeText={setEmail}
           />
           <Input
-            label="Contraseña"
+            label="Contraseña *"
             placeholder="******"
             isPassword
             value={password}
             onChangeText={setPassword}
           />
           <Input
-            label="Avatar URL"
+            label="Foto de Perfil (URL)"
             placeholder="https://..."
             value={avatar}
             onChangeText={setAvatar}
@@ -207,7 +247,7 @@ export default function UsersScreen() {
               onPress={() => setIsModalOpen(false)}
             />
             <Button
-              title={creating ? 'Registrando...' : 'Registrar'}
+              title={creating ? 'Guardando...' : 'Registrar'}
               variant="primary"
               style={{ flex: 1 }}
               disabled={creating}

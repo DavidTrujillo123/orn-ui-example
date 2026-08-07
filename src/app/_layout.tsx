@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
-import { UIProvider } from 'orn-ui/theme';
+import { SafeAreaUIProvider } from 'orn-ui/safe-area';
 import { AlertProvider } from 'orn-ui/alert-provider';
 import { ToastProvider } from 'orn-ui/toast-provider';
 
@@ -14,8 +14,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
   return (
-    <UIProvider mode={colorScheme === 'dark' ? 'dark' : 'light'}>
+    <SafeAreaUIProvider mode={colorScheme === 'dark' ? 'dark' : 'light'}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AlertProvider>
           <ToastProvider position="top">
@@ -28,6 +29,6 @@ export default function TabLayout() {
           </ToastProvider>
         </AlertProvider>
       </ThemeProvider>
-    </UIProvider>
+    </SafeAreaUIProvider>
   );
 }
