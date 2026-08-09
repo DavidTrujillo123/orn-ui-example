@@ -16,7 +16,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <SafeAreaUIProvider mode={colorScheme === 'dark' ? 'dark' : 'light'}>
+    <SafeAreaUIProvider defaultMode="system">
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AlertProvider>
           <ToastProvider position="top">

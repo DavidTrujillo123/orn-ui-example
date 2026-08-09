@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
+import { Title, Subtitle, Caption } from 'orn-ui/title';
 import { Card } from 'orn-ui/card';
 import { Badge } from 'orn-ui/badge';
 import { Input } from 'orn-ui/input';
 import { Button } from 'orn-ui/button';
-import { Spinner } from 'orn-ui/spinner';
 import { Avatar } from 'orn-ui/avatar';
 import { Modal } from 'orn-ui/modal';
 import { AvatarHeader } from 'orn-ui/avatar-header';
-import { EmptyState } from 'orn-ui/empty-state';
+import { SearchList } from 'orn-ui/search-list';
+import { Screen } from 'orn-ui/screen';
 import { useToast } from 'orn-ui/use-toast';
 
 import { ApiUserRepository } from '@/infrastructure/repositories/ApiUserRepository';
@@ -75,6 +75,11 @@ export default function UsersScreen() {
     }
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchUsers();
+  };
+
   const handleRegisterUser = async () => {
     if (!name || !email || !password) {
       toast.show({
@@ -116,86 +121,57 @@ export default function UsersScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-        <Spinner size="large" variant="dots" />
-        <View style={{ height: 16 }} />
-        <Body>Cargando comunidad de usuarios...</Body>
-      </View>
-    );
-  }
-
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#F8FAFC',
-        paddingTop: insets.top + 16,
-        paddingHorizontal: 16,
-      }}
-    >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <View>
-          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Directorio de Usuarios</Title>
-          <Caption color="#64748B">Comunidad activa en la plataforma</Caption>
-        </View>
+    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
+      <SearchList
+        header={
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <View>
+              <Title style={{ fontSize: 24, fontWeight: '800' }}>Directorio de Usuarios</Title>
+              <Caption>Comunidad activa en la plataforma</Caption>
+            </View>
 
-        <Button
-          title="+ Registrar"
-          variant="primary"
-          size="sm"
-          onPress={() => setIsModalOpen(true)}
-        />
-      </View>
+            <Button
+              title="+ Registrar"
+              variant="primary"
+              size="sm"
+              onPress={() => setIsModalOpen(true)}
+            />
+          </View>
+        }
+        searchValue={search}
+        onSearchChange={handleSearch}
+        searchPlaceholder="Buscar por nombre o correo..."
+        data={filteredUsers}
+        keyExtractor={(item) => item.id.toString()}
+        isLoading={loading}
+        isRefreshing={refreshing}
+        onRefresh={handleRefresh}
+        emptyTitle="Sin usuarios"
+        emptyDescription="No se encontraron usuarios que coincidan con la búsqueda."
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 14 }}
+        renderItem={({ item }) => (
+          <Card style={{ padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+            <Avatar size={52}>
+              <Title color="#2563EB" style={{ fontSize: 20, fontWeight: 'bold' }}>
+                {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
+              </Title>
+            </Avatar>
 
-      {/* User Search Input */}
-      <View style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Buscar por nombre o correo..."
-          value={search}
-          onChangeText={handleSearch}
-          leftIconName="search"
-          rightIconName={search ? 'close' : undefined}
-          onRightIconPress={() => handleSearch('')}
-        />
-      </View>
-
-      {filteredUsers.length === 0 ? (
-        <EmptyState
-          title="Sin usuarios"
-          description="No se encontraron usuarios que coincidan con la búsqueda."
-        />
-      ) : (
-        <FlatList
-          data={filteredUsers}
-          keyExtractor={(item) => item.id.toString()}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 14 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchUsers} />}
-          renderItem={({ item }) => (
-            <Card style={{ padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-              <Avatar size={52}>
-                <Title color="#2563EB" style={{ fontSize: 20, fontWeight: 'bold' }}>
-                  {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
-                </Title>
-              </Avatar>
-
-              <View style={{ flex: 1, gap: 4 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Subtitle style={{ fontSize: 16, fontWeight: '700' }}>{item.name}</Subtitle>
-                  <Badge
-                    label={item.role === 'admin' ? 'ADMINISTRADOR' : 'CLIENTE'}
-                    variant={item.role === 'admin' ? 'error' : 'info'}
-                  />
-                </View>
-                <Caption color="#64748B">{item.email}</Caption>
-                <Caption color="#94A3B8">Miembro ID #{item.id}</Caption>
+            <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Subtitle style={{ fontSize: 16, fontWeight: '700' }}>{item.name}</Subtitle>
+                <Badge
+                  label={item.role === 'admin' ? 'ADMINISTRADOR' : 'CLIENTE'}
+                  variant={item.role === 'admin' ? 'error' : 'info'}
+                />
               </View>
-            </Card>
-          )}
-        />
-      )}
+              <Caption color="#64748B">{item.email}</Caption>
+              <Caption color="#94A3B8">Miembro ID #{item.id}</Caption>
+            </View>
+          </Card>
+        )}
+      />
 
       {/* Overlay Modal Register User */}
       <Modal
@@ -256,6 +232,7 @@ export default function UsersScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </Screen>
   );
 }
+

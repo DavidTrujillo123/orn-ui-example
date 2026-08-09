@@ -1,56 +1,48 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { NavigationBar, type NavigationBarItem } from 'orn-ui/navigation-bar';
+import { useCart } from '@/presentation/state/CartContext';
 
-import { Colors } from '@/constants/theme';
+const NAV_ITEMS: NavigationBarItem[] = [
+  { key: 'index', label: 'Productos', iconName: 'check' },
+  { key: 'explore', label: 'Categorías', iconName: 'search' },
+  { key: 'users', label: 'Usuarios', iconName: 'info' },
+  { key: 'cart', label: 'Carrito', iconName: 'check' },
+  { key: 'profile', label: 'Perfil', iconName: 'info' },
+];
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const { totalItems } = useCart();
+
+  const items = NAV_ITEMS.map((item) => {
+    if (item.key === 'cart' && totalItems > 0) {
+      return { ...item, badge: totalItems };
+    }
+    return item;
+  });
 
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Productos</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
+    <Tabs
+      tabBar={(props) => {
+        const { state, navigation } = props;
+        const currentRoute = state.routes[state.index].name;
 
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Categorías</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="users">
-        <NativeTabs.Trigger.Label>Usuarios</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="cart">
-        <NativeTabs.Trigger.Label>Carrito</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="profile">
-        <NativeTabs.Trigger.Label>Perfil</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+        return (
+          <NavigationBar
+            items={items}
+            activeKey={currentRoute}
+            onChange={(key) => navigation.navigate(key)}
+          />
+        );
+      }}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tabs.Screen name="index" options={{ title: 'Productos' }} />
+      <Tabs.Screen name="explore" options={{ title: 'Categorías' }} />
+      <Tabs.Screen name="users" options={{ title: 'Usuarios' }} />
+      <Tabs.Screen name="cart" options={{ title: 'Carrito' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
+    </Tabs>
   );
 }
+

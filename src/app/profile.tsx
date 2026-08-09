@@ -14,6 +14,9 @@ import { Checkbox } from 'orn-ui/checkbox';
 import { Select } from 'orn-ui/select';
 import { Divider } from 'orn-ui/divider';
 import { Modal } from 'orn-ui/modal';
+import { SegmentedControl } from 'orn-ui/segmented-control';
+import { ThemeToggle } from 'orn-ui/theme-toggle';
+import { Screen } from 'orn-ui/screen';
 import { useToast } from 'orn-ui/use-toast';
 import { useAlert } from 'orn-ui/use-alert';
 
@@ -105,16 +108,15 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+    <Screen
+      scrollable
       contentContainerStyle={{
-        paddingTop: insets.top + 16,
-        paddingBottom: insets.bottom + 24,
         paddingHorizontal: 20,
+        paddingBottom: 24,
         gap: 20,
       }}
     >
-      <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>
+      <Title style={{ fontSize: 24, fontWeight: '800' }}>
         Mi Cuenta
       </Title>
 
@@ -122,7 +124,7 @@ export default function ProfileScreen() {
         // Authenticated Profile Dashboard
         <View style={{ gap: 16 }}>
           {/* Main User Card Header */}
-          <Card style={{ padding: 20, gap: 12, backgroundColor: '#FFFFFF', alignItems: 'center' }}>
+          <Card style={{ padding: 20, gap: 12, alignItems: 'center' }}>
             <AvatarHeader
               initials={user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
               title={user.name}
@@ -135,41 +137,21 @@ export default function ProfileScreen() {
             />
           </Card>
 
-          {/* Horizontal Scrollable Navigation Option Cards */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 10, paddingVertical: 4 }}
-          >
-            <OptionCard
-              label="Perfil"
-              iconName="info"
-              isSelected={activeTab === 'info'}
-              onPress={() => setActiveTab('info')}
-            />
-            <OptionCard
-              label="Tarjetas"
-              iconName="check"
-              isSelected={activeTab === 'cards'}
-              onPress={() => setActiveTab('cards')}
-            />
-            <OptionCard
-              label="Ajustes"
-              iconName="warning"
-              isSelected={activeTab === 'settings'}
-              onPress={() => setActiveTab('settings')}
-            />
-            <OptionCard
-              label="Soporte"
-              iconName="question"
-              isSelected={activeTab === 'support'}
-              onPress={() => setActiveTab('support')}
-            />
-          </ScrollView>
+          {/* SegmentedControl Navigation */}
+          <SegmentedControl
+            options={[
+              { value: 'info', label: 'Perfil' },
+              { value: 'cards', label: 'Tarjetas' },
+              { value: 'settings', label: 'Ajustes' },
+              { value: 'support', label: 'Soporte' },
+            ]}
+            value={activeTab}
+            onChange={(val) => setActiveTab(val as any)}
+          />
 
           {/* Tab 1: Account Info */}
           {activeTab === 'info' && (
-            <Card style={{ padding: 16, gap: 14, backgroundColor: '#FFFFFF' }}>
+            <Card style={{ padding: 16, gap: 14 }}>
               <Title style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
                 Información de la Cuenta:
               </Title>
@@ -262,45 +244,57 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          {/* Tab 3: Security & Preferences */}
+          {/* Tab 3: Security & Preferences & Theme */}
           {activeTab === 'settings' && (
-            <Card style={{ padding: 16, gap: 14, backgroundColor: '#FFFFFF' }}>
-              <Title style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
-                Seguridad y Notificaciones:
-              </Title>
-              <Checkbox
-                label="Autenticación de 2 Factores (2FA)"
-                value={enable2FA}
-                onValueChange={setEnable2FA}
-              />
-              <Checkbox
-                label="Notificaciones Push de estado de pedidos"
-                value={pushNotifs}
-                onValueChange={setPushNotifs}
-              />
-              <Checkbox
-                label="Alertas de inicio de sesión sospechoso"
-                value={loginAlerts}
-                onValueChange={setLoginAlerts}
-              />
-              <Checkbox
-                label="Recibir ofertas y promociones por correo"
-                value={promoEmails}
-                onValueChange={setPromoEmails}
-              />
-            </Card>
+            <View style={{ gap: 14 }}>
+              <Card style={{ padding: 16, gap: 12 }}>
+                <Title style={{ fontSize: 16, fontWeight: '700' }}>
+                  Tema de la Aplicación
+                </Title>
+                <Caption color="#64748B">
+                  Selecciona la apariencia preferida (3 temas por defecto)
+                </Caption>
+                <ThemeToggle labels={{ system: 'Automático', light: 'Claro', dark: 'Oscuro' }} />
+              </Card>
+
+              <Card style={{ padding: 16, gap: 14 }}>
+                <Title style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
+                  Seguridad y Notificaciones:
+                </Title>
+                <Checkbox
+                  label="Autenticación de 2 Factores (2FA)"
+                  value={enable2FA}
+                  onValueChange={setEnable2FA}
+                />
+                <Checkbox
+                  label="Notificaciones Push de estado de pedidos"
+                  value={pushNotifs}
+                  onValueChange={setPushNotifs}
+                />
+                <Checkbox
+                  label="Alertas de inicio de sesión sospechoso"
+                  value={loginAlerts}
+                  onValueChange={setLoginAlerts}
+                />
+                <Checkbox
+                  label="Recibir ofertas y promociones por correo"
+                  value={promoEmails}
+                  onValueChange={setPromoEmails}
+                />
+              </Card>
+            </View>
           )}
 
           {/* Tab 4: Live Support */}
           {activeTab === 'support' && (
-            <Card style={{ padding: 16, gap: 14, backgroundColor: '#FFFFFF' }}>
+            <Card style={{ padding: 16, gap: 14 }}>
               <AvatarHeader
                 iconName="question"
                 title="Centro de Ayuda & Soporte"
                 subtitle="Atención especializada las 24 horas del día"
               />
 
-              <Body style={{ lineHeight: 20, color: '#475569', textAlign: 'center' }}>
+              <Body style={{ lineHeight: 20, textAlign: 'center' }}>
                 ¿Tienes alguna duda con tu compra o entrega? Nuestro equipo de soporte está disponible en todo momento.
               </Body>
 
@@ -366,8 +360,8 @@ export default function ProfileScreen() {
             onPress={handleLogin}
           />
 
-          <Card style={{ backgroundColor: '#F1F5F9', padding: 12, gap: 4 }}>
-            <Caption color="#475569" style={{ fontWeight: 'bold' }}>
+          <Card style={{ padding: 12, gap: 4 }}>
+            <Caption style={{ fontWeight: 'bold' }}>
               Credenciales de Acceso Demo:
             </Caption>
             <Caption color="#64748B">Email: john@mail.com</Caption>
@@ -423,6 +417,6 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </Screen>
   );
 }

@@ -22,6 +22,7 @@ import { InfoRow } from 'orn-ui/info-row';
 import { Badge } from 'orn-ui/badge';
 import { useToast } from 'orn-ui/use-toast';
 import { useAlert } from 'orn-ui/use-alert';
+import { Screen } from 'orn-ui/screen';
 
 import { useCart } from '@/presentation/state/CartContext';
 
@@ -317,7 +318,7 @@ export default function CartScreen() {
               </View>
 
               {/* Manual Input Fields */}
-              <Card style={{ backgroundColor: '#F8FAFC', padding: 14, gap: 12 }}>
+              <Card style={{ padding: 14, gap: 12 }}>
                 <Select
                   label="Tipo de Tarjeta"
                   options={cardTypeOptions}
@@ -350,9 +351,9 @@ export default function CartScreen() {
               </Card>
             </View>
           ) : (
-            <Card style={{ backgroundColor: '#F1F5F9', padding: 14, gap: 6 }}>
+            <Card style={{ padding: 14, gap: 6 }}>
               <Subtitle style={{ fontWeight: 'bold' }}>Instrucciones de Pago:</Subtitle>
-              <Caption color="#475569">
+              <Caption>
                 {paymentMethod === 'cash'
                   ? 'Realizarás el pago en efectivo al recibir el paquete en tu domicilio.'
                   : 'Recibirás los datos bancarios y referencia tras confirmar el pedido.'}
@@ -375,9 +376,9 @@ export default function CartScreen() {
             subtitle="Revisa las políticas antes de confirmar"
           />
 
-          <Card style={{ backgroundColor: '#F8FAFC', padding: 14, gap: 10 }}>
+          <Card style={{ padding: 14, gap: 10 }}>
             <Subtitle style={{ fontWeight: 'bold' }}>Garantía de Satisfacción y Devolución</Subtitle>
-            <Body style={{ fontSize: 13, color: '#475569', lineHeight: 18 }}>
+            <Body style={{ fontSize: 13, lineHeight: 18 }}>
               Todos los productos cuentan con 30 días de garantía. Las devoluciones son sencillas y 100% gratuitas.
             </Body>
           </Card>
@@ -418,7 +419,7 @@ export default function CartScreen() {
           />
 
           {/* Timeline Steps */}
-          <Card style={{ padding: 14, backgroundColor: '#F8FAFC' }}>
+          <Card style={{ padding: 14 }}>
             <Title style={{ fontSize: 14, fontWeight: '700', marginBottom: 12 }}>
               Etapas del Envío:
             </Title>
@@ -433,7 +434,7 @@ export default function CartScreen() {
             />
           </Card>
 
-          <Card style={{ padding: 16, gap: 8, backgroundColor: '#FFFFFF' }}>
+          <Card style={{ padding: 16, gap: 8 }}>
             <Subtitle style={{ fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
               Desglose de Compra:
             </Subtitle>
@@ -448,18 +449,11 @@ export default function CartScreen() {
   ];
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#F8FAFC',
-        paddingTop: insets.top + 16,
-        paddingHorizontal: 16,
-      }}
-    >
+    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <View>
-          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Carrito de Compras</Title>
-          <Caption color="#64748B">{totalItems} productos seleccionados</Caption>
+          <Title style={{ fontSize: 24, fontWeight: '800' }}>Carrito de Compras</Title>
+          <Caption>{totalItems} productos seleccionados</Caption>
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -535,7 +529,7 @@ export default function CartScreen() {
           />
 
           {/* Checkout Summary Footer */}
-          <Card style={{ padding: 16, gap: 10, marginBottom: insets.bottom + 16, backgroundColor: '#FFFFFF' }}>
+          <Card style={{ padding: 16, gap: 10, marginBottom: insets.bottom + 16 }}>
             <KeyValueRow label="Subtotal" value={`$${totalAmount.toFixed(2)}`} />
             <KeyValueRow label="Envío Express" value="GRATIS" />
             <KeyValueRow label="Total a Pagar" value={`$${totalAmount.toFixed(2)}`} />
@@ -582,7 +576,7 @@ export default function CartScreen() {
             subtitle="Seguimiento de paquete en tiempo real"
           />
 
-          <Card style={{ padding: 16, gap: 14, backgroundColor: '#F8FAFC' }}>
+          <Card style={{ padding: 16, gap: 14 }}>
             <Title style={{ fontSize: 16, fontWeight: '700' }}>Progreso de la Entrega:</Title>
             <Steps
               steps={[
@@ -627,6 +621,6 @@ export default function CartScreen() {
           />
         </ScrollView>
       </Modal>
-    </View>
+    </Screen>
   );
 }

@@ -18,6 +18,8 @@ import { AvatarHeader } from 'orn-ui/avatar-header';
 import { Fab } from 'orn-ui/fab';
 import { useToast } from 'orn-ui/use-toast';
 import { useAlert } from 'orn-ui/use-alert';
+import { Screen } from 'orn-ui/screen';
+import { SegmentedControl } from 'orn-ui/segmented-control';
 
 import { ApiProductRepository } from '@/infrastructure/repositories/ApiProductRepository';
 import { ApiCategoryRepository } from '@/infrastructure/repositories/ApiCategoryRepository';
@@ -209,28 +211,21 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
+      <Screen scrollable={false} style={{ justifyContent: 'center', alignItems: 'center' }}>
         <Spinner size="large" variant="ring" />
         <View style={{ height: 16 }} />
         <Body>Cargando tienda...</Body>
-      </View>
+      </Screen>
     );
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#F8FAFC',
-        paddingTop: insets.top + 12,
-        paddingHorizontal: 16,
-      }}
-    >
+    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
       {/* App Top Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <View>
-          <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A' }}>Platzi Store</Title>
-          <Caption color="#64748B">Encuentra los mejores productos</Caption>
+          <Title style={{ fontSize: 24, fontWeight: '800' }}>Platzi Store</Title>
+          <Caption>Encuentra los mejores productos</Caption>
         </View>
 
         <Avatar size={44}>
@@ -252,32 +247,29 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Category Pills Filter */}
+      {/* Category Filter Pills (Horizontal Scroll) */}
       <View style={{ marginBottom: 16 }}>
-        <FlatList
+        <ScrollView
           horizontal
-          data={[{ id: null, name: 'Todos' }, ...categories.map((c) => ({ id: c.id, name: c.name }))]}
           showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => (item.id === null ? 'all' : item.id.toString())}
           contentContainerStyle={{ gap: 8 }}
-          renderItem={({ item }) => {
+        >
+          {[{ id: null, name: 'Todos' }, ...categories.map((c) => ({ id: c.id, name: c.name }))].map((item) => {
             const isSelected = selectedCategoryId === item.id;
             return (
               <TouchableOpacity
+                key={item.id === null ? 'all' : item.id.toString()}
                 activeOpacity={0.7}
                 onPress={() => handleCategorySelect(item.id)}
               >
                 <Badge
                   label={item.name}
                   variant={isSelected ? 'info' : 'neutral'}
-                  backgroundColor={isSelected ? '#2563EB' : undefined}
-                  textColor={isSelected ? '#FFFFFF' : undefined}
-                  style={{ paddingHorizontal: 16, paddingVertical: 8 }}
                 />
               </TouchableOpacity>
             );
-          }}
-        />
+          })}
+        </ScrollView>
       </View>
 
       {/* Product Grid */}
@@ -372,9 +364,9 @@ export default function HomeScreen() {
               resizeMode="cover"
             />
 
-            <Body style={{ lineHeight: 22, color: '#475569' }}>{selectedProduct.description}</Body>
+            <Body style={{ lineHeight: 22 }}>{selectedProduct.description}</Body>
 
-            <Card style={{ backgroundColor: '#F1F5F9', padding: 12, gap: 8 }}>
+            <Card style={{ padding: 12, gap: 8 }}>
               <KeyValueRow label="Código de Producto" value={`#${selectedProduct.id}`} />
               <KeyValueRow label="Categoría" value={selectedProduct.category?.name || 'General'} />
               <KeyValueRow label="Garantía de Devolución" value="30 días gratis" />
@@ -472,6 +464,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </Screen>
   );
 }

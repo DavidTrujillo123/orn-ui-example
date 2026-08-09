@@ -4,13 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
 import { Card } from 'orn-ui/card';
-import { Badge } from 'orn-ui/badge';
 import { Button } from 'orn-ui/button';
 import { Spinner } from 'orn-ui/spinner';
 import { Image } from 'orn-ui/image';
-import { EmptyState } from 'orn-ui/empty-state';
 import { BottomSheet } from 'orn-ui/bottom-sheet';
 import { AvatarHeader } from 'orn-ui/avatar-header';
+import { List } from 'orn-ui/list';
+import { Screen } from 'orn-ui/screen';
 import { useToast } from 'orn-ui/use-toast';
 
 import { ApiCategoryRepository } from '@/infrastructure/repositories/ApiCategoryRepository';
@@ -57,6 +57,7 @@ export default function ExploreScreen() {
 
   const handleCategoryPress = async (cat: Category) => {
     setSelectedCategory(cat);
+    setCategoryProducts([]);
     setLoadingProducts(true);
     try {
       const prods = await categoryUseCases.getCategoryProducts(cat.id);
@@ -75,27 +76,20 @@ export default function ExploreScreen() {
 
   if (loadingCategories) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
+      <Screen scrollable={false} style={{ justifyContent: 'center', alignItems: 'center' }}>
         <Spinner size="large" variant="dots" />
         <View style={{ height: 16 }} />
         <Body>Cargando categorías...</Body>
-      </View>
+      </Screen>
     );
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#F8FAFC',
-        paddingTop: insets.top + 16,
-        paddingHorizontal: 16,
-      }}
-    >
-      <Title style={{ fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 }}>
+    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
+      <Title style={{ fontSize: 24, fontWeight: '800', marginBottom: 4 }}>
         Explora Categorías
       </Title>
-      <Caption color="#64748B" style={{ marginBottom: 16 }}>
+      <Caption style={{ marginBottom: 16 }}>
         Encuentra productos organizados por categoría
       </Caption>
 
@@ -141,67 +135,59 @@ export default function ExploreScreen() {
         <BottomSheet
           visible={!!selectedCategory}
           onClose={() => setSelectedCategory(null)}
+          scrollable={false}
         >
-          <View style={{ maxHeight: 500, paddingBottom: 20 }}>
+          <View style={{ height: 420, paddingBottom: 10 }}>
             <AvatarHeader
               iconName="info"
               title={selectedCategory.name}
               subtitle="Catálogo de productos disponibles"
             />
 
-            {loadingProducts ? (
-              <View style={{ padding: 30, alignItems: 'center' }}>
-                <Spinner size="large" variant="ring" />
-                <Body style={{ marginTop: 12 }}>Buscando productos de {selectedCategory.name}...</Body>
-              </View>
-            ) : categoryProducts.length === 0 ? (
-              <EmptyState
-                title="Sin productos"
-                description={`No hay productos disponibles en la categoría ${selectedCategory.name}.`}
-              />
-            ) : (
-              <FlatList
-                key="category-products-list-1"
-                data={categoryProducts}
-                keyExtractor={(item) => item.id.toString()}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12 }}
-                renderItem={({ item }) => (
-                  <Card style={{ padding: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                    <Image
-                      source={{ uri: item.images[0] }}
-                      width={60}
-                      height={60}
-                      radius={10}
-                    />
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <Subtitle numberOfLines={1} style={{ fontSize: 15, fontWeight: '700' }}>
-                        {item.title}
-                      </Subtitle>
-                      <Title color="#2563EB" style={{ fontSize: 15, fontWeight: 'bold' }}>
-                        ${item.price}
-                      </Title>
-                    </View>
-                    <Button
-                      title="+ Carrito"
-                      variant="primary"
-                      size="sm"
-                      onPress={() => {
-                        addToCart(item);
-                        toast.show({
-                          title: '¡Producto añadido!',
-                          message: `${item.title} fue agregado al carrito.`,
-                          variant: 'success',
-                        });
-                      }}
-                    />
-                  </Card>
-                )}
-              />
-            )}
+            <List
+              containerStyle={{ flex: 1 }}
+              data={categoryProducts}
+              keyExtractor={(item) => item.id.toString()}
+              isLoading={loadingProducts}
+              emptyTitle="Sin productos"
+              emptyDescription={`No hay productos disponibles en la categoría ${selectedCategory.name}.`}
+              contentContainerStyle={{ gap: 12 }}
+              renderItem={({ item }) => (
+                <Card style={{ padding: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <Image
+                    source={{ uri: item.images[0] }}
+                    width={60}
+                    height={60}
+                    radius={10}
+                  />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Subtitle numberOfLines={1} style={{ fontSize: 15, fontWeight: '700' }}>
+                      {item.title}
+                    </Subtitle>
+                    <Title color="#2563EB" style={{ fontSize: 15, fontWeight: 'bold' }}>
+                      ${item.price}
+                    </Title>
+                  </View>
+                  <Button
+                    title="+ Carrito"
+                    variant="primary"
+                    size="sm"
+                    onPress={() => {
+                      addToCart(item);
+                      toast.show({
+                        title: '¡Producto añadido!',
+                        message: `${item.title} fue agregado al carrito.`,
+                        variant: 'success',
+                      });
+                    }}
+                  />
+                </Card>
+              )}
+            />
           </View>
         </BottomSheet>
       )}
-    </View>
+    </Screen>
   );
 }
+
