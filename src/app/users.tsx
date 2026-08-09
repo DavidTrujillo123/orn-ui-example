@@ -57,7 +57,9 @@ export default function UsersScreen() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount by design
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchUsers is not memoized, only meant to run once
   }, []);
 
   const handleSearch = (text: string) => {
@@ -122,7 +124,7 @@ export default function UsersScreen() {
   };
 
   return (
-    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
+    <Screen scrollable={false} edges={['top']} style={{ paddingHorizontal: 16 }}>
       <SearchList
         header={
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

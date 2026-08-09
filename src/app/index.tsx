@@ -1,25 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
 import { Card } from 'orn-ui/card';
 import { Badge } from 'orn-ui/badge';
 import { Input } from 'orn-ui/input';
 import { Button } from 'orn-ui/button';
+import { IconButton } from 'orn-ui/icon-button';
 import { Spinner } from 'orn-ui/spinner';
 import { Avatar } from 'orn-ui/avatar';
 import { Image } from 'orn-ui/image';
 import { KeyValueRow } from 'orn-ui/key-value-row';
+import { Stepper } from 'orn-ui/stepper';
+import { PressableScale } from 'orn-ui/pressable-scale';
 import { Modal } from 'orn-ui/modal';
 import { BottomSheet } from 'orn-ui/bottom-sheet';
 import { EmptyState } from 'orn-ui/empty-state';
 import { AvatarHeader } from 'orn-ui/avatar-header';
 import { Fab } from 'orn-ui/fab';
+import { useColors } from 'orn-ui/theme';
 import { useToast } from 'orn-ui/use-toast';
 import { useAlert } from 'orn-ui/use-alert';
 import { Screen } from 'orn-ui/screen';
-import { SegmentedControl } from 'orn-ui/segmented-control';
 
 import { ApiProductRepository } from '@/infrastructure/repositories/ApiProductRepository';
 import { ApiCategoryRepository } from '@/infrastructure/repositories/ApiCategoryRepository';
@@ -35,10 +39,12 @@ const categoryUseCases = new CategoryUseCases(new ApiCategoryRepository());
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { addToCart } = useCart();
+  const { addToCart, updateQuantity } = useCart();
   const { user } = useAuth();
   const toast = useToast();
   const { confirm } = useAlert();
+  const colors = useColors();
+  const [detailQuantity, setDetailQuantity] = useState('1');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -86,7 +92,9 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount by design
     loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadInitialData is not memoized, only meant to run once
   }, []);
 
   const handleSearch = (text: string) => {
@@ -211,7 +219,7 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <Screen scrollable={false} style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <Screen scrollable={false} edges={['top']} style={{ justifyContent: 'center', alignItems: 'center' }}>
         <Spinner size="large" variant="ring" />
         <View style={{ height: 16 }} />
         <Body>Cargando tienda...</Body>
@@ -220,7 +228,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
+    <Screen scrollable={false} edges={['top']} style={{ paddingHorizontal: 16 }}>
       {/* App Top Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <View>
@@ -229,7 +237,7 @@ export default function HomeScreen() {
         </View>
 
         <Avatar size={44}>
-          <Title color="#2563EB" style={{ fontSize: 16, fontWeight: 'bold' }}>
+          <Title color={colors.primary} style={{ fontSize: 16, fontWeight: 'bold' }}>
             {user ? user.name.charAt(0).toUpperCase() : 'P'}
           </Title>
         </Avatar>
@@ -280,53 +288,56 @@ export default function HomeScreen() {
         />
       ) : (
         <FlatList
+          key="products-grid-2"
           data={filteredProducts}
           keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 12 }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 80, gap: 16 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 80, gap: 12 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadInitialData} />}
           renderItem={({ item }) => (
-            <Card style={{ padding: 14, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-              <Image
-                source={{ uri: item.images[0] }}
-                width={80}
-                height={80}
-                radius={12}
-                resizeMode="cover"
-              />
+            <PressableScale
+              onPress={() => {
+                setDetailQuantity('1');
+                setSelectedProduct(item);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver detalles de ${item.title}`}
+              style={{ flex: 1 }}
+            >
+              <Card style={{ padding: 0, overflow: 'hidden', flex: 1 }}>
+                <View>
+                  <Image source={{ uri: item.images[0] }} style={{ width: '100%', height: 140 }} resizeMode="cover" />
+                  <View style={{ position: 'absolute', right: 8, bottom: 8 }}>
+                    <IconButton
+                      iconName="plus"
+                      accessibilityLabel={`Agregar ${item.title} al carrito`}
+                      color="#ffffff"
+                      style={{ backgroundColor: colors.primary, borderRadius: 999 }}
+                      onPress={() => {
+                        addToCart(item);
+                        toast.show({
+                          title: 'Agregado al Carrito',
+                          message: `${item.title} fue añadido.`,
+                          variant: 'success',
+                        });
+                      }}
+                    />
+                  </View>
+                </View>
 
-              <View style={{ flex: 1, gap: 4 }}>
-                <Badge label={item.category?.name || 'Producto'} variant="neutral" />
-                <Subtitle numberOfLines={1} style={{ fontSize: 16, fontWeight: '700' }}>
-                  {item.title}
-                </Subtitle>
-                <Title color="#2563EB" style={{ fontSize: 16, fontWeight: 'bold' }}>
-                  ${item.price}
-                </Title>
-              </View>
-
-              <View style={{ gap: 6 }}>
-                <Button
-                  title="Detalles"
-                  variant="outline"
-                  size="sm"
-                  onPress={() => setSelectedProduct(item)}
-                />
-                <Button
-                  title="+ Carrito"
-                  variant="primary"
-                  size="sm"
-                  onPress={() => {
-                    addToCart(item);
-                    toast.show({
-                      title: 'Agregado al Carrito',
-                      message: `${item.title} fue añadido.`,
-                      variant: 'success',
-                    });
-                  }}
-                />
-              </View>
-            </Card>
+                <View style={{ padding: 10, gap: 2 }}>
+                  <Caption numberOfLines={1}>{item.category?.name || 'Producto'}</Caption>
+                  <Subtitle numberOfLines={2} style={{ fontSize: 13, fontWeight: '600', minHeight: 34 }}>
+                    {item.title}
+                  </Subtitle>
+                  <Title color={colors.primary} style={{ fontSize: 18, fontWeight: '800', marginTop: 2 }}>
+                    ${item.price}
+                  </Title>
+                </View>
+              </Card>
+            </PressableScale>
           )}
         />
       )}
@@ -372,13 +383,40 @@ export default function HomeScreen() {
               <KeyValueRow label="Garantía de Devolución" value="30 días gratis" />
             </Card>
 
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Subtitle style={{ fontWeight: '700' }}>Cantidad</Subtitle>
+              <View style={{ width: 130 }}>
+                <Stepper
+                  value={detailQuantity}
+                  min={1}
+                  max={99}
+                  onChangeText={setDetailQuantity}
+                  onIncrement={() => setDetailQuantity((q) => String(Math.min(99, parseInt(q, 10) + 1)))}
+                  onDecrement={() => setDetailQuantity((q) => String(Math.max(1, parseInt(q, 10) - 1)))}
+                  size="sm"
+                />
+              </View>
+            </View>
+
+            <View style={{ gap: 10, marginTop: 4 }}>
+              <Button
+                title="Comprar Ahora"
+                variant="primary"
+                onPress={() => {
+                  const qty = Math.max(1, parseInt(detailQuantity, 10) || 1);
+                  addToCart(selectedProduct);
+                  if (qty > 1) updateQuantity(selectedProduct.id, qty);
+                  setSelectedProduct(null);
+                  router.push('/cart');
+                }}
+              />
               <Button
                 title="Añadir al Carrito"
-                variant="primary"
-                style={{ flex: 1 }}
+                variant="outline"
                 onPress={() => {
+                  const qty = Math.max(1, parseInt(detailQuantity, 10) || 1);
                   addToCart(selectedProduct);
+                  if (qty > 1) updateQuantity(selectedProduct.id, qty);
                   setSelectedProduct(null);
                   toast.show({
                     title: '¡Agregado!',
@@ -388,7 +426,7 @@ export default function HomeScreen() {
                 }}
               />
               <Button
-                title="Eliminar"
+                title="Eliminar Producto"
                 variant="destructive"
                 onPress={() => handleDeleteProduct(selectedProduct.id)}
               />

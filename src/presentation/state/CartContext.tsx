@@ -21,9 +21,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems((prev) => {
       const existingIndex = prev.findIndex((item) => item.product.id === product.id);
       if (existingIndex > -1) {
-        const updated = [...prev];
-        updated[existingIndex].quantity += 1;
-        return updated;
+        // No mutar el item existente: prev[existingIndex] es el mismo objeto
+        // en memoria, así que sumarle acá arriba lo cambiaba también en el
+        // array viejo — React ya no podía distinguir el render anterior del
+        // nuevo y el estado quedaba inconsistente.
+        return prev.map((item, i) =>
+          i === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
+        );
       }
       return [...prev, { product, quantity: 1 }];
     });

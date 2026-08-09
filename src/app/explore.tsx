@@ -52,7 +52,9 @@ export default function ExploreScreen() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount by design
     fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchCategories is not memoized, only meant to run once
   }, []);
 
   const handleCategoryPress = async (cat: Category) => {
@@ -76,7 +78,7 @@ export default function ExploreScreen() {
 
   if (loadingCategories) {
     return (
-      <Screen scrollable={false} style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <Screen scrollable={false} edges={['top']} style={{ justifyContent: 'center', alignItems: 'center' }}>
         <Spinner size="large" variant="dots" />
         <View style={{ height: 16 }} />
         <Body>Cargando categorías...</Body>
@@ -85,7 +87,7 @@ export default function ExploreScreen() {
   }
 
   return (
-    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
+    <Screen scrollable={false} edges={['top']} style={{ paddingHorizontal: 16 }}>
       <Title style={{ fontSize: 24, fontWeight: '800', marginBottom: 4 }}>
         Explora Categorías
       </Title>

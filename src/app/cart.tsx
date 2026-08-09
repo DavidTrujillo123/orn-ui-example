@@ -449,7 +449,7 @@ export default function CartScreen() {
   ];
 
   return (
-    <Screen scrollable={false} style={{ paddingHorizontal: 16 }}>
+    <Screen scrollable={false} edges={['top']} style={{ paddingHorizontal: 16 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <View>
           <Title style={{ fontSize: 24, fontWeight: '800' }}>Carrito de Compras</Title>

@@ -1,30 +1,35 @@
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TouchableOpacity, View } from 'react-native';
 
-import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
+import { Title, Body, Caption } from 'orn-ui/title';
 import { Card } from 'orn-ui/card';
 import { Badge } from 'orn-ui/badge';
 import { Input } from 'orn-ui/input';
 import { Button } from 'orn-ui/button';
 import { AvatarHeader } from 'orn-ui/avatar-header';
 import { InfoRow } from 'orn-ui/info-row';
-import { OptionCard } from 'orn-ui/option-card';
 import { Checkbox } from 'orn-ui/checkbox';
 import { Select } from 'orn-ui/select';
 import { Divider } from 'orn-ui/divider';
 import { Modal } from 'orn-ui/modal';
 import { SegmentedControl } from 'orn-ui/segmented-control';
 import { ThemeToggle } from 'orn-ui/theme-toggle';
+import { Icon } from 'orn-ui/icons';
+import { useColors } from 'orn-ui/theme';
 import { Screen } from 'orn-ui/screen';
 import { useToast } from 'orn-ui/use-toast';
 import { useAlert } from 'orn-ui/use-alert';
 
 import { useAuth } from '@/presentation/state/AuthContext';
+import { BRANDS, useBrand } from '@/components/BrandProvider';
+
+const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
   const { user, token, isLoading, error, login, logout } = useAuth();
+  const { brand, setBrand } = useBrand();
+  const colors = useColors();
+  const [customBrand, setCustomBrand] = useState('');
   const toast = useToast();
   const { confirm } = useAlert();
 
@@ -110,6 +115,7 @@ export default function ProfileScreen() {
   return (
     <Screen
       scrollable
+      edges={['top']}
       contentContainerStyle={{
         paddingHorizontal: 20,
         paddingBottom: 24,
@@ -255,6 +261,58 @@ export default function ProfileScreen() {
                   Selecciona la apariencia preferida (3 temas por defecto)
                 </Caption>
                 <ThemeToggle labels={{ system: 'Automático', light: 'Claro', dark: 'Oscuro' }} />
+              </Card>
+
+              <Card style={{ padding: 16, gap: 12 }}>
+                <Title style={{ fontSize: 16, fontWeight: '700' }}>
+                  Color de Marca
+                </Title>
+                <Caption color="#64748B">
+                  Un solo color repinta botones, badges y la barra de navegación.
+                </Caption>
+
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                  {BRANDS.map((option) => {
+                    const selected = option.hex.toLowerCase() === brand.toLowerCase();
+                    return (
+                      <TouchableOpacity
+                        key={option.hex}
+                        onPress={() => {
+                          setBrand(option.hex);
+                          setCustomBrand('');
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={option.label}
+                        accessibilityState={{ selected }}
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 22,
+                          backgroundColor: option.hex,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderWidth: selected ? 3 : 0,
+                          borderColor: colors.text,
+                        }}
+                      >
+                        {selected && <Icon name="check" size={20} color="#ffffff" />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Input
+                  label="O tu propio hex"
+                  placeholder="#7c3aed"
+                  value={customBrand}
+                  onChangeText={(text) => {
+                    setCustomBrand(text);
+                    if (HEX.test(text)) setBrand(text);
+                  }}
+                  autoCapitalize="none"
+                  error={customBrand.length > 0 && !HEX.test(customBrand) ? 'Un hex como #7c3aed' : undefined}
+                  containerStyle={{ marginTop: 8, marginBottom: 0 }}
+                />
               </Card>
 
               <Card style={{ padding: 16, gap: 14 }}>
