@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Title, Subtitle, Body, Caption } from 'orn-ui/title';
+import { Gradient } from 'orn-ui/gradient';
+import { Slides } from 'orn-ui/slides';
+import { SymmetricGrid } from 'orn-ui/symmetric-grid';
+import { useColors } from 'orn-ui/theme';
 import { Card } from 'orn-ui/card';
 import { Button } from 'orn-ui/button';
 import { Spinner } from 'orn-ui/spinner';
@@ -25,6 +29,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { addToCart } = useCart();
   const toast = useToast();
+  const colors = useColors();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -86,51 +91,94 @@ export default function ExploreScreen() {
     );
   }
 
+  const featured = categories.slice(0, 4);
+  const slideBackgrounds = [
+    [colors.primary, colors.secondary],
+    [colors.success, colors.primary],
+    [colors.warning, colors.error],
+    [colors.secondary, colors.success],
+  ];
+
   return (
     <Screen scrollable={false} edges={['top']} style={{ paddingHorizontal: 16 }}>
-      <Title style={{ fontSize: 24, fontWeight: '800', marginBottom: 4 }}>
-        Explora Categorías
-      </Title>
-      <Caption style={{ marginBottom: 16 }}>
-        Encuentra productos organizados por categoría
-      </Caption>
-
-      <FlatList
-        key="categories-grid-2"
-        data={categories}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 16 }}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24, gap: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchCategories} />}
-        renderItem={({ item }) => (
-          <Card
-            style={{
-              flex: 1,
-              padding: 16,
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <Image
-              source={{ uri: item.image }}
-              width={100}
-              height={100}
-              radius={16}
-              resizeMode="cover"
-            />
-            <Title align="center" numberOfLines={1} style={{ fontSize: 16, fontWeight: '700' }}>
-              {item.name}
-            </Title>
-            <Button
-              title="Ver Productos"
-              variant="outline"
-              size="sm"
-              onPress={() => handleCategoryPress(item)}
-            />
-          </Card>
+      >
+        <Gradient
+          colors={[colors.primarySoft, colors.background]}
+          direction="diagonal"
+          style={{ borderRadius: 16, padding: 16 }}
+        >
+          <Title style={{ fontSize: 24, fontWeight: '800', marginBottom: 4 }}>
+            Explora Categorías
+          </Title>
+          <Caption>Encuentra productos organizados por categoría</Caption>
+        </Gradient>
+
+        {featured.length > 0 && (
+          <Slides
+            data={featured}
+            keyExtractor={(item) => item.id.toString()}
+            background={(_, index) => slideBackgrounds[index % slideBackgrounds.length]}
+            gradientDirection="diagonal"
+            height={160}
+            loop
+            autoPlay
+            interval={4000}
+            indicators="dots"
+            slideStyle={{ borderRadius: 16, overflow: 'hidden' }}
+            renderItem={(item) => (
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 }}>
+                <View style={{ flex: 1, gap: 8 }}>
+                  <Caption color={colors.white}>Destacado</Caption>
+                  <Title color={colors.white} numberOfLines={1} style={{ fontSize: 22, fontWeight: '800' }}>
+                    {item.name}
+                  </Title>
+                  <Button
+                    title="Ver productos"
+                    variant="secondary"
+                    size="sm"
+                    style={{ alignSelf: 'flex-start' }}
+                    onPress={() => handleCategoryPress(item)}
+                  />
+                </View>
+                <Image source={{ uri: item.image }} width={96} height={96} radius={48} resizeMode="cover" />
+              </View>
+            )}
+          />
         )}
-      />
+
+        <Subtitle style={{ fontSize: 16, fontWeight: '700' }}>Todas las categorías</Subtitle>
+
+        <SymmetricGrid
+          data={categories}
+          keyExtractor={(item) => item.id.toString()}
+          columns={2}
+          gap={16}
+          renderItem={(item) => (
+            <Card style={{ flex: 1, padding: 16, alignItems: 'center', gap: 12 }}>
+              <Image
+                source={{ uri: item.image }}
+                width={100}
+                height={100}
+                radius={16}
+                resizeMode="cover"
+              />
+              <Title align="center" numberOfLines={1} style={{ fontSize: 16, fontWeight: '700' }}>
+                {item.name}
+              </Title>
+              <Button
+                title="Ver Productos"
+                variant="outline"
+                size="sm"
+                onPress={() => handleCategoryPress(item)}
+              />
+            </Card>
+          )}
+        />
+      </ScrollView>
 
       {/* BottomSheet for Selected Category Products */}
       {selectedCategory && (
@@ -166,7 +214,7 @@ export default function ExploreScreen() {
                     <Subtitle numberOfLines={1} style={{ fontSize: 15, fontWeight: '700' }}>
                       {item.title}
                     </Subtitle>
-                    <Title color="#2563EB" style={{ fontSize: 15, fontWeight: 'bold' }}>
+                    <Title color={colors.primaryText} style={{ fontSize: 15, fontWeight: 'bold' }}>
                       ${item.price}
                     </Title>
                   </View>

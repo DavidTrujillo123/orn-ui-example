@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
 import { Title, Body, Caption } from 'orn-ui/title';
+import { DatePicker } from 'orn-ui/date-picker';
+import { Chart } from 'orn-ui/chart';
+import { Toast } from 'orn-ui/toast';
+import { FormActions } from 'orn-ui/form-actions';
+import { Gradient } from 'orn-ui/gradient';
+import { useAlert, showAlert, hideAlert } from 'orn-ui/use-alert';
+import { sanitizeNumeric } from 'orn-ui/sanitize-numeric';
+import { useReduceMotion } from 'orn-ui/use-reduce-motion';
 import { Card } from 'orn-ui/card';
 import { Badge } from 'orn-ui/badge';
 import { Input } from 'orn-ui/input';
@@ -18,12 +26,21 @@ import { Icon } from 'orn-ui/icons';
 import { useColors } from 'orn-ui/theme';
 import { Screen } from 'orn-ui/screen';
 import { useToast } from 'orn-ui/use-toast';
-import { useAlert } from 'orn-ui/use-alert';
 
 import { useAuth } from '@/presentation/state/AuthContext';
 import { BRANDS, useBrand } from '@/components/BrandProvider';
 
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+// Gasto mensual de ejemplo para la gráfica del perfil.
+const SPENDING = [
+  { x: 'Abr', compras: 120, envios: 15 },
+  { x: 'May', compras: 340, envios: 25 },
+  { x: 'Jun', compras: 210, envios: 20 },
+  { x: 'Jul', compras: 480, envios: 30 },
+  { x: 'Ago', compras: 290, envios: 18 },
+  { x: 'Sep', compras: 530, envios: 35 },
+];
 
 export default function ProfileScreen() {
   const { user, token, isLoading, error, login, logout } = useAuth();
@@ -32,6 +49,9 @@ export default function ProfileScreen() {
   const [customBrand, setCustomBrand] = useState('');
   const toast = useToast();
   const { confirm } = useAlert();
+  const reduceMotion = useReduceMotion();
+  const [birthday, setBirthday] = useState<Date | undefined>(undefined);
+  const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
 
   const [email, setEmail] = useState('john@mail.com');
   const [password, setPassword] = useState('changeme');
@@ -188,13 +208,56 @@ export default function ProfileScreen() {
                 selectedValue={currency}
                 onSelect={setCurrency}
               />
+
+              <Divider />
+
+              <Title style={{ fontSize: 16, fontWeight: '700' }}>Tu cumpleaños</Title>
+              <Caption>
+                {birthday
+                  ? `Te enviaremos un cupón el ${birthday.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}.`
+                  : 'Elige tu fecha y recibe un cupón de regalo.'}
+              </Caption>
+              <DatePicker
+                value={birthday}
+                onChange={setBirthday}
+                maxDate={new Date()}
+                defaultMonth={new Date(2000, 0, 1)}
+                firstDayOfWeek={1}
+              />
+            </Card>
+          )}
+
+          {activeTab === 'info' && (
+            <Card style={{ padding: 16, gap: 12 }}>
+              <Title style={{ fontSize: 16, fontWeight: '700' }}>Gasto de los últimos 6 meses</Title>
+              <SegmentedControl
+                options={[
+                  { value: 'bar', label: 'Barras' },
+                  { value: 'area', label: 'Área' },
+                ]}
+                value={chartType}
+                onChange={(val) => setChartType(val as 'bar' | 'area')}
+              />
+              <Chart
+                type={chartType}
+                data={SPENDING}
+                series={[
+                  { key: 'compras', label: 'Compras' },
+                  { key: 'envios', label: 'Envíos' },
+                ]}
+                stacked
+                legend="toggle"
+                animate={!reduceMotion}
+                formatValue={(v) => `$${v}`}
+                accessibilityLabel="Gasto mensual en compras y envíos"
+              />
             </Card>
           )}
 
           {/* Tab 2: Saved Bank Cards */}
           {activeTab === 'cards' && (
             <View style={{ gap: 14 }}>
-              <Card style={{ padding: 16, gap: 12, backgroundColor: '#FFFFFF' }}>
+              <Card style={{ padding: 16, gap: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Title style={{ fontSize: 16, fontWeight: '700' }}>Tarjetas Guardadas</Title>
                   <Button
@@ -206,13 +269,10 @@ export default function ProfileScreen() {
                 </View>
 
                 {/* Card 1 */}
-                <Card
-                  style={{
-                    backgroundColor: '#0F172A',
-                    padding: 16,
-                    borderRadius: 16,
-                    gap: 12,
-                  }}
+                <Gradient
+                  colors={['#0F172A', '#1E3A8A']}
+                  direction="diagonal"
+                  style={{ padding: 16, borderRadius: 16, gap: 12 }}
                 >
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Title color="#FFFFFF" style={{ fontSize: 14, fontWeight: 'bold' }}>
@@ -224,16 +284,13 @@ export default function ProfileScreen() {
                     4532 •••• •••• 4242
                   </Title>
                   <Caption color="#94A3B8">Vence: 12/28 — {user.name}</Caption>
-                </Card>
+                </Gradient>
 
                 {/* Card 2 */}
-                <Card
-                  style={{
-                    backgroundColor: '#1E1B4B',
-                    padding: 16,
-                    borderRadius: 16,
-                    gap: 12,
-                  }}
+                <Gradient
+                  colors={['#1E1B4B', '#7C2D12']}
+                  direction="diagonal-reverse"
+                  style={{ padding: 16, borderRadius: 16, gap: 12 }}
                 >
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Title color="#FFFFFF" style={{ fontSize: 14, fontWeight: 'bold' }}>
@@ -245,7 +302,7 @@ export default function ProfileScreen() {
                     5500 •••• •••• 8888
                   </Title>
                   <Caption color="#94A3B8">Vence: 09/27 — {user.name}</Caption>
-                </Card>
+                </Gradient>
               </Card>
             </View>
           )}
@@ -257,7 +314,7 @@ export default function ProfileScreen() {
                 <Title style={{ fontSize: 16, fontWeight: '700' }}>
                   Tema de la Aplicación
                 </Title>
-                <Caption color="#64748B">
+                <Caption>
                   Selecciona la apariencia preferida (3 temas por defecto)
                 </Caption>
                 <ThemeToggle labels={{ system: 'Automático', light: 'Claro', dark: 'Oscuro' }} />
@@ -267,7 +324,7 @@ export default function ProfileScreen() {
                 <Title style={{ fontSize: 16, fontWeight: '700' }}>
                   Color de Marca
                 </Title>
-                <Caption color="#64748B">
+                <Caption>
                   Un solo color repinta botones, badges y la barra de navegación.
                 </Caption>
 
@@ -356,15 +413,31 @@ export default function ProfileScreen() {
                 ¿Tienes alguna duda con tu compra o entrega? Nuestro equipo de soporte está disponible en todo momento.
               </Body>
 
+              <Toast
+                variant="info"
+                title="Último mensaje de soporte"
+                message="Tu pedido #PLZ-894129 ya salió del almacén."
+                hideCloseButton
+              />
+
               <Button
                 title="Conectar con Agente en Vivo"
                 variant="primary"
                 onPress={() => {
-                  toast.show({
+                  showAlert({
                     title: 'Conectando Chat',
-                    message: 'Un especialista te atenderá en unos momentos.',
-                    variant: 'info',
+                    message: 'Buscando un especialista disponible...',
+                    type: 'info',
                   });
+                  // Simula que el agente responde: cierra el alert desde fuera.
+                  setTimeout(() => {
+                    hideAlert();
+                    toast.show({
+                      title: 'Agente conectado',
+                      message: 'Un especialista te atenderá en unos momentos.',
+                      variant: 'success',
+                    });
+                  }, 2000);
                 }}
               />
             </Card>
@@ -406,7 +479,7 @@ export default function ProfileScreen() {
           />
 
           {error && (
-            <Caption color="#EF4444" style={{ fontWeight: 'bold' }}>
+            <Caption color={colors.errorText} style={{ fontWeight: 'bold' }}>
               {error}
             </Caption>
           )}
@@ -422,8 +495,8 @@ export default function ProfileScreen() {
             <Caption style={{ fontWeight: 'bold' }}>
               Credenciales de Acceso Demo:
             </Caption>
-            <Caption color="#64748B">Email: john@mail.com</Caption>
-            <Caption color="#64748B">Password: changeme</Caption>
+            <Caption>Email: john@mail.com</Caption>
+            <Caption>Password: changeme</Caption>
           </Card>
         </Card>
       )}
@@ -442,7 +515,7 @@ export default function ProfileScreen() {
             placeholder="4532 •••• •••• 9999"
             keyboardType="numeric"
             value={newCardNumber}
-            onChangeText={setNewCardNumber}
+            onChangeText={(val) => setNewCardNumber(sanitizeNumeric(val))}
           />
           <Input
             label="Nombre del Titular"
@@ -459,20 +532,14 @@ export default function ProfileScreen() {
             onChangeText={setNewCardExpiry}
           />
 
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-            <Button
-              title="Cancelar"
-              variant="outline"
-              style={{ flex: 1 }}
-              onPress={() => setIsAddCardOpen(false)}
-            />
-            <Button
-              title="Guardar Tarjeta"
-              variant="primary"
-              style={{ flex: 1 }}
-              onPress={handleSaveNewCard}
-            />
-          </View>
+          <FormActions
+            primaryLabel="Guardar Tarjeta"
+            onPrimaryPress={handleSaveNewCard}
+            primaryDisabled={!newCardNumber || !newCardHolder}
+            secondaryLabel="Cancelar"
+            onSecondaryPress={() => setIsAddCardOpen(false)}
+            style={{ marginTop: 8 }}
+          />
         </View>
       </Modal>
     </Screen>

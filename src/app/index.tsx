@@ -9,11 +9,15 @@ import { Badge } from 'orn-ui/badge';
 import { Input } from 'orn-ui/input';
 import { Button } from 'orn-ui/button';
 import { IconButton } from 'orn-ui/icon-button';
-import { Spinner } from 'orn-ui/spinner';
+import { Skeleton } from 'orn-ui/skeleton';
+import { ShinyText } from 'orn-ui/shiny-text';
+import { Transition, useReduceMotion } from 'orn-ui/transition';
 import { Avatar } from 'orn-ui/avatar';
-import { Image } from 'orn-ui/image';
+import { Image, prefetchImage } from 'orn-ui/image';
 import { KeyValueRow } from 'orn-ui/key-value-row';
-import { Stepper } from 'orn-ui/stepper';
+import { Stepper, sanitizeNumeric } from 'orn-ui/stepper';
+import { FormActions } from 'orn-ui/form-actions';
+import { OptionWheel } from 'orn-ui/option-wheel';
 import { PressableScale } from 'orn-ui/pressable-scale';
 import { Modal } from 'orn-ui/modal';
 import { BottomSheet } from 'orn-ui/bottom-sheet';
@@ -44,6 +48,7 @@ export default function HomeScreen() {
   const toast = useToast();
   const { confirm } = useAlert();
   const colors = useColors();
+  const reduceMotion = useReduceMotion();
   const [detailQuantity, setDetailQuantity] = useState('1');
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,6 +83,11 @@ export default function HomeScreen() {
       setProducts(prods);
       setFilteredProducts(prods);
       setCategories(cats);
+      // Calienta la caché de las primeras imágenes para que la grilla y el
+      // detalle no parpadeen al entrar.
+      prods.slice(0, 8).forEach((p) => {
+        if (p.images[0]) prefetchImage(p.images[0]).catch(() => {});
+      });
     } catch (err) {
       console.error('Error loading products/categories:', err);
       toast.show({
@@ -124,7 +134,7 @@ export default function HomeScreen() {
     setNewTitle('');
     setNewPrice('');
     setNewDescription('');
-    setNewCatId('1');
+    setNewCatId(categories[0] ? String(categories[0].id) : '1');
     setTitleError('');
     setPriceError('');
     setDescriptionError('');
@@ -219,10 +229,23 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <Screen scrollable={false} edges={['top']} style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <Spinner size="large" variant="ring" />
-        <View style={{ height: 16 }} />
-        <Body>Cargando tienda...</Body>
+      <Screen scrollable={false} edges={['top']} style={{ paddingHorizontal: 16, gap: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ gap: 6 }}>
+            <Skeleton width={160} height={24} />
+            <Skeleton width={200} height={12} />
+          </View>
+          <Skeleton variant="circle" width={44} height={44} />
+        </View>
+        <Skeleton height={48} radius={12} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <View key={i} style={{ width: '47%', gap: 8 }}>
+              <Skeleton height={140} radius={12} />
+              <Skeleton variant="text" lines={2} lastLineWidth="60%" />
+            </View>
+          ))}
+        </View>
       </Screen>
     );
   }
@@ -233,7 +256,7 @@ export default function HomeScreen() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <View>
           <Title style={{ fontSize: 24, fontWeight: '800' }}>Platzi Store</Title>
-          <Caption>Encuentra los mejores productos</Caption>
+          <ShinyText text="Encuentra los mejores productos" animated={!reduceMotion} />
         </View>
 
         <Avatar size={44}>
@@ -282,10 +305,12 @@ export default function HomeScreen() {
 
       {/* Product Grid */}
       {filteredProducts.length === 0 ? (
-        <EmptyState
-          title="Sin resultados"
-          description="No encontramos productos coincidentes con tu búsqueda o categoría seleccionada."
-        />
+        <Transition preset={['fade', 'slide-up']} appear>
+          <EmptyState
+            title="Sin resultados"
+            description="No encontramos productos coincidentes con tu búsqueda o categoría seleccionada."
+          />
+        </Transition>
       ) : (
         <FlatList
           key="products-grid-2"
@@ -313,7 +338,7 @@ export default function HomeScreen() {
                     <IconButton
                       iconName="plus"
                       accessibilityLabel={`Agregar ${item.title} al carrito`}
-                      color="#ffffff"
+                      color={colors.onPrimary}
                       style={{ backgroundColor: colors.primary, borderRadius: 999 }}
                       onPress={() => {
                         addToCart(item);
@@ -462,8 +487,9 @@ export default function HomeScreen() {
             value={newPrice}
             error={priceError}
             onChangeText={(val) => {
-              setNewPrice(val);
-              if (val.trim()) setPriceError('');
+              const clean = sanitizeNumeric(val, { allowDecimals: true });
+              setNewPrice(clean);
+              if (clean.trim()) setPriceError('');
             }}
           />
           <Input
@@ -477,29 +503,24 @@ export default function HomeScreen() {
               if (val.trim()) setDescriptionError('');
             }}
           />
-          <Input
-            label="ID de Categoría"
-            placeholder="1 (Ropa), 2 (Electrónica)..."
-            keyboardType="numeric"
-            value={newCatId}
-            onChangeText={setNewCatId}
+          <OptionWheel
+            label="Categoría"
+            options={categories.map((c) => ({ label: c.name, value: String(c.id) }))}
+            selectedValue={newCatId}
+            onSelect={setNewCatId}
+            visibleCount={3}
+            variant="spotlight"
           />
 
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-            <Button
-              title="Cancelar"
-              variant="outline"
-              style={{ flex: 1 }}
-              onPress={() => setIsCreateModalOpen(false)}
-            />
-            <Button
-              title={creating ? 'Guardando...' : 'Publicar'}
-              variant="primary"
-              style={{ flex: 1 }}
-              disabled={creating}
-              onPress={handleCreateProduct}
-            />
-          </View>
+          <FormActions
+            primaryLabel="Publicar"
+            primaryLeftIconName="check"
+            primaryLoading={creating}
+            onPrimaryPress={handleCreateProduct}
+            secondaryLabel="Cancelar"
+            onSecondaryPress={() => setIsCreateModalOpen(false)}
+            style={{ marginTop: 8 }}
+          />
         </View>
       </Modal>
     </Screen>

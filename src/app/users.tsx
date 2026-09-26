@@ -3,6 +3,9 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Title, Subtitle, Caption } from 'orn-ui/title';
+import { Chart } from 'orn-ui/chart';
+import { FormActions } from 'orn-ui/form-actions';
+import { useColors } from 'orn-ui/theme';
 import { Card } from 'orn-ui/card';
 import { Badge } from 'orn-ui/badge';
 import { Input } from 'orn-ui/input';
@@ -23,6 +26,7 @@ const userUseCases = new UserUseCases(new ApiUserRepository());
 export default function UsersScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
+  const colors = useColors();
 
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -76,6 +80,11 @@ export default function UsersScreen() {
       setFilteredUsers(users);
     }
   };
+
+  const roleData = [
+    { x: 'Clientes', usuarios: users.filter((u) => u.role !== 'admin').length },
+    { x: 'Administradores', usuarios: users.filter((u) => u.role === 'admin').length },
+  ];
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -141,6 +150,22 @@ export default function UsersScreen() {
             />
           </View>
         }
+        ListHeaderComponent={
+          users.length > 0 ? (
+            <Card style={{ padding: 16, gap: 8 }}>
+              <Subtitle style={{ fontSize: 15, fontWeight: '700' }}>Usuarios por rol</Subtitle>
+              <Chart
+                type="donut"
+                data={roleData}
+                series={[{ key: 'usuarios', label: 'Usuarios' }]}
+                height={180}
+                sliceLabels="value"
+                legend="static"
+                accessibilityLabel="Distribución de usuarios por rol"
+              />
+            </Card>
+          ) : null
+        }
         searchValue={search}
         onSearchChange={handleSearch}
         searchPlaceholder="Buscar por nombre o correo..."
@@ -155,7 +180,7 @@ export default function UsersScreen() {
         renderItem={({ item }) => (
           <Card style={{ padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' }}>
             <Avatar size={52}>
-              <Title color="#2563EB" style={{ fontSize: 20, fontWeight: 'bold' }}>
+              <Title color={colors.primaryText} style={{ fontSize: 20, fontWeight: 'bold' }}>
                 {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
               </Title>
             </Avatar>
@@ -168,8 +193,8 @@ export default function UsersScreen() {
                   variant={item.role === 'admin' ? 'error' : 'info'}
                 />
               </View>
-              <Caption color="#64748B">{item.email}</Caption>
-              <Caption color="#94A3B8">Miembro ID #{item.id}</Caption>
+              <Caption>{item.email}</Caption>
+              <Caption color={colors.textLight}>Miembro ID #{item.id}</Caption>
             </View>
           </Card>
         )}
@@ -217,21 +242,14 @@ export default function UsersScreen() {
             onChangeText={setAvatar}
           />
 
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-            <Button
-              title="Cancelar"
-              variant="outline"
-              style={{ flex: 1 }}
-              onPress={() => setIsModalOpen(false)}
-            />
-            <Button
-              title={creating ? 'Guardando...' : 'Registrar'}
-              variant="primary"
-              style={{ flex: 1 }}
-              disabled={creating}
-              onPress={handleRegisterUser}
-            />
-          </View>
+          <FormActions
+            primaryLabel="Registrar"
+            primaryLoading={creating}
+            onPrimaryPress={handleRegisterUser}
+            secondaryLabel="Cancelar"
+            onSecondaryPress={() => setIsModalOpen(false)}
+            style={{ marginTop: 8 }}
+          />
         </View>
       </Modal>
     </Screen>
